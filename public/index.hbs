@@ -1,0 +1,107 @@
+<html>
+<head>
+  <meta charset='utf-8' />
+  <title>App</title>
+  <link href='css/styles.css' rel='stylesheet' />
+  <script src="https://cdn.socket.io/4.3.2/socket.io.min.js"
+          integrity="sha384-KAZ4DtjNhLChOB/hxXuKqhMLYvx3b5MlT55xPEiNmREKRzeEm+RVPlTnAn0ajQNs"
+          crossorigin="anonymous"></script>
+  <script>
+
+
+  </script>
+</head>
+<body>
+<div id="roomList">
+  <ul>
+
+  </ul>
+</div>
+<div id="createRoom">
+  <h2>createRoom</h2>
+  <input type="text" id="roomName"/>
+  <button> 방 만들기</button>
+</div>
+
+</body>
+<script>
+  //const url = (window.location.href).replace('3000', '3131')
+  //const socket = io(url);
+  const socket = io("http://localhost:3131");
+
+  const createRoom = document.getElementById('createRoom')
+
+  createRoom.querySelector('button').addEventListener('click', async () => {
+    const roomName = createRoom.querySelector('input').value
+    await socket.emit('createRoom', {
+      userName: 'Anon',
+      roomName: roomName,
+    })
+  })
+
+  socket.on('createRoom', (data)=>{
+    console.log('방이 생성됨')
+    console.log(data)
+  })
+
+
+
+  /*
+  // 로그인
+  const signIn = document.querySelector("#signIn");
+  signIn.addEventListener("click", () => {
+    let email = document.querySelector("#user_email");
+    let pw = document.querySelector("#user_pw");
+    socket.emit("signIn", {
+        user_email: email.value,
+        user_pw: pw.value
+      }
+    );
+  });
+
+  // 주문
+  const order = document.querySelector("#order");
+  const userOrderNum = document.querySelector("#userOrderNum");
+  order.addEventListener("click", () => {
+    socket.emit("userOrder", {
+      orderNum: userOrderNum.value
+    });
+
+  });
+
+  // admin 주문 알림
+  socket.on("orderAdminAlert", (data) => {
+    console.log(data);
+  });
+
+  // admin 조리시작 btn
+  const orderUpdate = document.querySelector("#orderUpdate");
+  const adminOrderNum = document.querySelector("#adminOrderNum");
+  orderUpdate.addEventListener("click", (orderNum) => {
+    socket.emit("orderUpdate", {
+      orderNum: adminOrderNum.value
+    });
+  });
+
+
+  // user 조리 시작 알림
+  socket.on("orderUserAlert", (data) => {
+    console.log(data);
+  });
+
+  // 주문번호로 roomJoin
+  const orderNumBtn = document.querySelector("#orderNumBtn");
+  orderNumBtn.addEventListener("click", () => {
+    let orderNum = document.querySelector("#orderNum");
+    socket.emit("findOrder", orderNum.value);
+  });
+*/
+
+  /*
+  * var socket = io("http://localhost", {
+  extraHeaders: {
+    Authorization: "Bearer authorization_token_here"
+  }
+});*/
+</script>
+</html>
