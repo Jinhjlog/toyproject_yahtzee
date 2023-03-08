@@ -42,4 +42,30 @@ export class PrismaService extends PrismaClient implements OnModuleInit {
       },
     });
   }
+
+  // room db
+  async getRoomHostId() {
+    return this.room.findMany({
+      select: {
+        room_id: true,
+        user_id: true,
+      },
+    });
+  }
+
+  async createRoom(data) {
+    return this.room.create({
+      data: data,
+    });
+  }
+
+  async getRoomList() {
+    return this.room.findMany({
+      select: {
+        room_id: true,
+        room_name: true,
+        room_state: true,
+      },
+    });
+  }
 }

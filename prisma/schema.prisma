@@ -16,3 +16,10 @@ model User {
   user_pw    String @db.MediumText
   user_name  String
 }
+
+model Room {
+  room_id    Int    @id @default(autoincrement())
+  user_id    Int
+  room_name  String
+  room_state String
+}

@@ -1,0 +1,66 @@
+<html>
+<head>
+  <meta charset='utf-8' />
+  <title>App</title>
+  <link href='css/styles.css' rel='stylesheet' />
+  <script src="https://cdn.socket.io/4.3.2/socket.io.min.js"
+          integrity="sha384-KAZ4DtjNhLChOB/hxXuKqhMLYvx3b5MlT55xPEiNmREKRzeEm+RVPlTnAn0ajQNs"
+          crossorigin="anonymous"></script>
+</head>
+<body>
+<h1>room</h1>
+
+
+<h3>대기 중인 유저 목록</h3>
+<div id="userList">
+  <ul>
+
+  </ul>
+</div>
+
+<button id="testbtn">test</button>
+
+</body>
+<script>
+  //const url = (window.location.href).replace('3000', '3131')
+  //const socket = io(url);
+  const socket = io("http://localhost:3131");
+
+  const nickName = 'test' + (Math.floor(Math.random() * 9999) + 1).toString();
+
+  const createRoom = document.getElementById('createRoom')
+
+  if(searchParam('role') == 'host') {
+    socket.emit('hostCreateRoom', {
+      userName: 'host',
+      roomNumber: searchParam('roomNumber')
+    })
+  }else {
+    socket.emit('joinRoom', {
+      roomNumber: searchParam('roomNumber')
+    })
+
+    socket.emit('savePlayInfo', {
+      roomNumber: searchParam('roomNumber'),
+      userName: nickName
+    })
+  }
+
+
+  socket.on('userJoinRoom', (data) => {
+    console.log(data);
+  })
+
+
+  function searchParam(key) {
+    return new URLSearchParams(location.search).get(key);
+  }
+
+
+  const testbtn = document.getElementById('testbtn');
+
+  testbtn.addEventListener('click', () => {
+    socket.emit('serverConsoleView', searchParam('roomNumber'));
+  })
+</script>
+</html>

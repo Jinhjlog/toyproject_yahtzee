@@ -12,6 +12,11 @@
   </script>
 </head>
 <body>
+<div id="setName">
+  <h2>setName</h2>
+  <input type="text" id="setNameInput"/>
+  <button>이름 설정</button>
+</div>
 <div id="roomList">
   <ul>
 
@@ -28,21 +33,61 @@
   //const url = (window.location.href).replace('3000', '3131')
   //const socket = io(url);
   const socket = io("http://localhost:3131");
-
   const createRoom = document.getElementById('createRoom')
+  const roomListDiv = document.getElementById("roomList");
+  const setNameDiv = document.getElementById('setName')
+
+  setNameDiv.querySelector('button').addEventListener('click', () => {
+    const userName = setNameDiv.querySelector('input').value;
+    socket.emit('setName', userName);
+  })
 
   createRoom.querySelector('button').addEventListener('click', async () => {
     const roomName = createRoom.querySelector('input').value
     await socket.emit('createRoom', {
-      userName: 'Anon',
+      //createUser: 'Anon',
+      user_id: 4,
       roomName: roomName,
     })
   })
 
-  socket.on('createRoom', (data)=>{
+
+  socket.on('createRoom', (data) => {
+    location.href = '/room?roomNumber=' + data.room_id +'&role=' + data.role;
+  })
+
+  // 처음 진입 시 방목록 불러오기
+  socket.emit('roomListAll')
+
+  // 서버로부터 방목록 가져오기
+  socket.on('refreshRoom', (data)=>{
+
     console.log('방이 생성됨')
     console.log(data)
+    const ul = roomListDiv.querySelector('ul');
+    ul.innerHTML = '';
+
+    for(let i = 0; i < data.length; i++){
+      const li = document.createElement('li');
+      const btn = document.createElement('button');
+      li.innerText = `${data[i].room_id} : ${data[i].room_name}`;
+      btn.innerText = `${data[i].room_id} 방`;
+      btn.value = data[i].room_id;
+      btn.onclick = function() {
+        location.href = '/room?roomNumber=' + data[i].room_id+'&role=user';
+      }
+      ul.appendChild(li);
+      ul.appendChild(btn);
+    }
   })
+
+  socket.on('error', (data) => {
+    console.log(data);
+  })
+
+
+
+
 
 
 
