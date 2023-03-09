@@ -23,3 +23,11 @@ model Room {
   room_name  String
   room_state String
 }
+
+model Token {
+  token_id      Int     @id @default(autoincrement())
+  user_email    String  @unique
+  access_token  String  @db.MediumText
+  refresh_token String  @db.MediumText
+  admin_token   String? @db.MediumText
+}

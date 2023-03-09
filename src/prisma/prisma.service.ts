@@ -1,5 +1,6 @@
 import { INestApplication, Injectable, OnModuleInit } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
+import { treeKillSync } from '@nestjs/cli/lib/utils/tree-kill';
 
 @Injectable()
 export class PrismaService extends PrismaClient implements OnModuleInit {
@@ -39,6 +40,38 @@ export class PrismaService extends PrismaClient implements OnModuleInit {
     return this.user.findMany({
       select: {
         user_email: true,
+      },
+    });
+  }
+
+  //Token db
+  async setToken(data) {
+    return this.token.create({
+      data: data,
+    });
+  }
+
+  async findUserToken(data) {
+    return this.token.findUnique({
+      where: {
+        user_email: data.user_email,
+      },
+    });
+  }
+
+  async updateToken(data) {
+    return this.token.update({
+      where: {
+        user_email: data.user_email,
+      },
+      data: data,
+    });
+  }
+
+  async deleteToken(data) {
+    return this.token.delete({
+      where: {
+        user_email: data.user_email,
       },
     });
   }

@@ -40,7 +40,7 @@
       roomNumber: searchParam('roomNumber')
     })
 
-    socket.emit('savePlayInfo', {
+    socket.emit('setPlayInfo', {
       roomNumber: searchParam('roomNumber'),
       userName: nickName
     })

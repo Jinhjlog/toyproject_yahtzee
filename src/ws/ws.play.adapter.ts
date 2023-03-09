@@ -50,6 +50,7 @@ export class WsPlayAdapter implements OnGatewayConnection, OnGatewayDisconnect {
           [
             data.userName,
             {
+              socId: [...socket.rooms][0],
               userName: 'host',
               userState: 'none',
             },
@@ -73,7 +74,7 @@ export class WsPlayAdapter implements OnGatewayConnection, OnGatewayDisconnect {
       .emit('userJoinRoom', `${name}님이 입장하셨습니다!`);
   }
 
-  @SubscribeMessage('savePlayInfo')
+  @SubscribeMessage('setPlayInfo')
   async savePlayInfo(socket: Socket, data) {
     let index;
     // await this.playInfo.forEach((list) => {
@@ -92,6 +93,7 @@ export class WsPlayAdapter implements OnGatewayConnection, OnGatewayDisconnect {
         [
           data.userName,
           {
+            socId: [...socket.rooms][0],
             userName: data.userName,
             userState: 'none',
           },
@@ -105,6 +107,10 @@ export class WsPlayAdapter implements OnGatewayConnection, OnGatewayDisconnect {
 
   @SubscribeMessage('serverConsoleView')
   async serverConsoleView(socket: Socket, data) {
-    console.log(this.server.sockets.adapter.rooms.get(data));
+    console.log('host:', [...this.server.sockets.adapter.rooms.get(data)][0]);
+    console.log('------------------------------------------');
+    console.log([...socket.rooms][0]);
+    console.log(this.playInfo);
+    console.log(this.playInfo[0].userInfo);
   }
 }

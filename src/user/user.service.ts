@@ -2,6 +2,7 @@ import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../prisma/prisma.service';
 import { JwtService } from '@nestjs/jwt';
+import { use } from 'passport';
 @Injectable()
 export class UserService {
   constructor(private db: PrismaService) {}
@@ -29,7 +30,6 @@ export class UserService {
   // 로그인
   async signIn(data) {
     const db_data = await this.db.signIn(data);
-    //onsole.log(db_data);
     if (!db_data) {
       throw new NotFoundException('Email, PW error');
     }
@@ -47,7 +47,19 @@ export class UserService {
     /*
      * refreshToken db create 코드 작성
      * */
+    const setToken = { user_email: payload.user_email, ...token };
+
+
+    try {
+      await this.db.setToken(setToken);
+    } catch (e) {
+      await this.db.deleteToken({
+        user_email: db_data.user_email,
+      });
+      await this.db.setToken(setToken);
+    }
     return token;
+
   }
 
   async test() {
@@ -100,10 +112,69 @@ export class UserService {
 
     return adminToken
       ? {
-          accessToken: accessToken,
-          refreshToken: refreshToken,
-          adminToken: adminToken,
+          access_token: accessToken,
+          refresh_token: refreshToken,
+          admin_token: adminToken,
         }
-      : { accessToken: accessToken, refreshToken: refreshToken };
+      : { access_token: accessToken, refresh_token: refreshToken };
+  }
+
+  async updateToken(headers) {
+    let userInfo = headers.authorization.substring(7);
+    userInfo = this.jwtService.decode(userInfo);
+
+    const payload = {
+      user_email: userInfo.user_email,
+      user_name: userInfo.user_name,
+    };
+
+    const db_data = await this.db.findUserToken(userInfo);
+    if (!db_data) {
+      throw new NotFoundException('not Found refreshToken');
+    }
+
+    let adminToken = null;
+
+    // 관리자 토큰
+    if (userInfo.user_email === 'admin') {
+      adminToken = this.jwtService.sign(payload, {
+        secret: 'admin',
+        expiresIn: '3h',
+      });
+    }
+
+    const accessToken = this.jwtService.sign(payload, {
+      secret: 'user',
+      expiresIn: '3h',
+    });
+
+    const insertDBData = adminToken
+      ? {
+          access_token: accessToken,
+          admin_token: adminToken,
+        }
+      : { access_token: accessToken };
+
+    await this.db.updateToken({
+      user_email: userInfo.user_email,
+      ...insertDBData,
+    });
+
+    return insertDBData;
+  }
+
+  async signOut(headers) {
+    let userInfo = headers.authorization.substring(7);
+    userInfo = this.jwtService.decode(userInfo);
+
+    const db_data = await this.db.deleteToken({
+      user_email: userInfo.user_email,
+    });
+
+    if (!db_data) {
+      throw new NotFoundException('not Found User');
+    }
+
+    return `${db_data.user_email} user signOut`;
   }
 }
