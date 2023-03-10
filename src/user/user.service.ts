@@ -39,6 +39,7 @@ export class UserService {
     }
 
     const payload = {
+      user_id: db_data.user_id,
       user_email: db_data.user_email,
       user_name: db_data.user_name,
     };
@@ -49,7 +50,6 @@ export class UserService {
      * */
     const setToken = { user_email: payload.user_email, ...token };
 
-
     try {
       await this.db.setToken(setToken);
     } catch (e) {
@@ -59,12 +59,12 @@ export class UserService {
       await this.db.setToken(setToken);
     }
     return token;
-
   }
 
-  async test() {
-    const data = await this.db.getUserEmail();
-    return data;
+  async test(data) {
+    const a = await this.db.findRoom(Number(data.num));
+    console.log(a);
+    return 'ASD';
   }
 
   // bcrypt
@@ -124,6 +124,7 @@ export class UserService {
     userInfo = this.jwtService.decode(userInfo);
 
     const payload = {
+      user_id: userInfo.user_id,
       user_email: userInfo.user_email,
       user_name: userInfo.user_name,
     };

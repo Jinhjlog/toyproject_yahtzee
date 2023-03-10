@@ -26,35 +26,50 @@
   //const socket = io(url);
   const socket = io("http://localhost:3131");
 
-  const nickName = 'test' + (Math.floor(Math.random() * 9999) + 1).toString();
+  const temp_id = Math.floor(Math.random() * 9999) + 1;
+  const nickName = 'test' + temp_id.toString();
 
-  const createRoom = document.getElementById('createRoom')
+  const userList = document.getElementById('userList');
+  const userList_ul = userList.querySelector('ul');
+
+
 
   if(searchParam('role') == 'host') {
     socket.emit('hostCreateRoom', {
-      userName: 'host',
+      userId: temp_id,
+      userRole : 'host',
+      userName: nickName,
       roomNumber: searchParam('roomNumber')
     })
   }else {
     socket.emit('joinRoom', {
       roomNumber: searchParam('roomNumber')
     })
-
     socket.emit('setPlayInfo', {
+      userId: temp_id,
+      userRole : 'user',
       roomNumber: searchParam('roomNumber'),
-      userName: nickName
+      userName: nickName // user_id를 담아야됨
     })
   }
 
 
   socket.on('userJoinRoom', (data) => {
     console.log(data);
+
   })
 
+  socket.on('refreshUserList', (data) => {
+    console.log(data);
+  })
 
   function searchParam(key) {
     return new URLSearchParams(location.search).get(key);
   }
+
+  socket.on('disconnectHost', ()=> {
+    location.href = '/'
+  })
 
 
   const testbtn = document.getElementById('testbtn');
@@ -62,5 +77,7 @@
   testbtn.addEventListener('click', () => {
     socket.emit('serverConsoleView', searchParam('roomNumber'));
   })
+
+
 </script>
 </html>

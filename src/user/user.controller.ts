@@ -29,10 +29,10 @@ export class UserController {
     return this.userService.signOut(req.headers);
   }
 
-  @UseGuards(JwtAuthGuardUser)
   @Get('/test')
-  test(@Body() data, @Request() req) {
-    return this.userService.updateToken(req.headers);
+  test(@Body() data) {
+    return this.userService.test(data)
+
   }
 
 

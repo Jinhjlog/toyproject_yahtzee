@@ -28,6 +28,7 @@ export class PrismaService extends PrismaClient implements OnModuleInit {
         user_email: data.user_email,
       },
       select: {
+        user_id: true,
         user_email: true,
         user_pw: true,
         user_name: true,
@@ -76,7 +77,7 @@ export class PrismaService extends PrismaClient implements OnModuleInit {
     });
   }
 
-  // room db
+  // room db start
   async getRoomHostId() {
     return this.room.findMany({
       select: {
@@ -101,4 +102,21 @@ export class PrismaService extends PrismaClient implements OnModuleInit {
       },
     });
   }
+
+  async deleteRoom(roomId) {
+    return this.room.deleteMany({
+      where: {
+        room_id: Number(roomId),
+      },
+    });
+  }
+
+  async findRoom(roomId) {
+    return this.room.findUnique({
+      where: {
+        room_id: roomId,
+      }
+    })
+  }
+  // room db end
 }
