@@ -8,7 +8,6 @@ import {
   WebSocketServer,
 } from '@nestjs/websockets';
 import { Socket, Server } from 'socket.io';
-import { RoomInfo } from './entities/room-ws.entity';
 import { UnauthorizedException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 @WebSocketGateway(3131, {
@@ -31,8 +30,6 @@ export class WsAdapter
   handleDisconnect(socket: Socket) {
     //console.log(this.server.sockets.adapter.rooms);
   }
-
-  private roomInfo: RoomInfo[] = [];
 
   constructor(private db: PrismaService) {}
 
@@ -97,5 +94,4 @@ export class WsAdapter
   async getRoomList() {
     return this.db.getRoomList();
   }
-
 }

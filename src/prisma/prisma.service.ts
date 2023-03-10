@@ -100,6 +100,9 @@ export class PrismaService extends PrismaClient implements OnModuleInit {
         room_name: true,
         room_state: true,
       },
+      where: {
+        room_state: 'waiting',
+      },
     });
   }
 
@@ -115,8 +118,19 @@ export class PrismaService extends PrismaClient implements OnModuleInit {
     return this.room.findUnique({
       where: {
         room_id: roomId,
-      }
-    })
+      },
+    });
+  }
+
+  async startGame(roomId) {
+    return this.room.update({
+      where: {
+        room_id: roomId,
+      },
+      data: {
+        room_state: 'start',
+      },
+    });
   }
   // room db end
 }

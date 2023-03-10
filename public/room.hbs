@@ -20,6 +20,12 @@
 
 <button id="testbtn">test</button>
 
+<h2> 준비, 시작 버튼</h2>
+<div id="gameSetBtn">
+  <button id="readyBtn">준비</button>
+  <button id="startBtn">시작</button>
+</div>
+
 </body>
 <script>
   //const url = (window.location.href).replace('3000', '3131')
@@ -27,18 +33,20 @@
   const socket = io("http://localhost:3131");
 
   const temp_id = Math.floor(Math.random() * 9999) + 1;
-  const nickName = 'test' + temp_id.toString();
+  const userName = 'test' + temp_id.toString();
 
   const userList = document.getElementById('userList');
   const userList_ul = userList.querySelector('ul');
 
+  const startBtn = document.getElementById('startBtn') ;
+  const readyBtn = document.getElementById('readyBtn');
 
 
   if(searchParam('role') == 'host') {
     socket.emit('hostCreateRoom', {
       userId: temp_id,
       userRole : 'host',
-      userName: nickName,
+      userName: userName,
       roomNumber: searchParam('roomNumber')
     })
   }else {
@@ -49,7 +57,7 @@
       userId: temp_id,
       userRole : 'user',
       roomNumber: searchParam('roomNumber'),
-      userName: nickName // user_id를 담아야됨
+      userName: userName //
     })
   }
 
@@ -81,12 +89,29 @@
     console.log(data);
   })
 
+  startBtn.addEventListener('click', () => {
+    socket.emit('hostGameStart', {
+      roomNumber: searchParam('roomNumber'),
+    })
+  })
+
+  readyBtn.addEventListener('click', () => {
+    socket.emit('setUserReady', {
+      roomNumber: searchParam('roomNumber'),
+    })
+  })
+
+  socket.on('gameStart', (data) => {
+    console.log(data);
+  })
 
   const testbtn = document.getElementById('testbtn');
 
   testbtn.addEventListener('click', () => {
     socket.emit('serverConsoleView', searchParam('roomNumber'));
   })
+
+
 
 
 </script>
