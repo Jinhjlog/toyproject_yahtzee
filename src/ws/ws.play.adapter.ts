@@ -28,20 +28,25 @@ export class WsPlayAdapter implements OnGatewayConnection, OnGatewayDisconnect {
     // > leave 써서 다 내보내고 목록 페이지로 강제로 내보냄
     // > 데이터베이스에 있는 방 목록 삭제
     // > entity에 있는 배열 삭제
-
+    let userRoomNumber = 0;
     // host가 방을 나가면 전부 방을 나가게 함
     if (socket['userRole'] === 'host') {
       let index = 0;
       let roomNumber = 0;
       await this.playInfo.forEach((info) => {
         for (let i = 0; i < info.userInfo.length; i++) {
-          if (info.userInfo[i].get(socket['userId'])) {
-            console.log(info.roomNumber);
+          if (info.userInfo[i]['userId'] == socket['userId']) {
             socket.to(info.roomNumber.toString()).emit('disconnectHost');
-            console.log(this.playInfo[index]);
             this.playInfo.splice(index, 1);
             roomNumber = info.roomNumber;
           }
+          // if (info.userInfo[i].get(socket['userId'])) {
+          //   console.log(info.roomNumber);
+          //   socket.to(info.roomNumber.toString()).emit('disconnectHost');
+          //   console.log(this.playInfo[index]);
+          //   this.playInfo.splice(index, 1);
+          //   roomNumber = info.roomNumber;
+          // }
         }
         index++;
       });
@@ -56,12 +61,27 @@ export class WsPlayAdapter implements OnGatewayConnection, OnGatewayDisconnect {
 
         for (let i = 0; i < info.userList.length; i++) {
           if (info.userList[i] === socket['userId']) {
-            this.playInfo[index].userList.splice(i);
-            this.playInfo[index].userInfo.splice(i);
+            this.playInfo[index].userList.splice(i, 1);
+            this.playInfo[index].userInfo.splice(i, 1);
+            userRoomNumber = this.playInfo[index].roomNumber;
           }
         }
         index++;
       });
+
+      try {
+        const playInfoIdx = this.getMyRoomIdx(userRoomNumber);
+        //console.log(playInfoIdx);
+        socket
+          .to(userRoomNumber.toString())
+          .emit(
+            'disconnectUser',
+            `${socket['userName']}이(가) 방을 나갔습니다.`,
+          );
+        socket
+          .to(this.playInfo[playInfoIdx].roomNumber.toString())
+          .emit('refreshUserList', this.playInfo[playInfoIdx]);
+      } catch (e) {}
     }
     // console.log(this.server.sockets.adapter.rooms);
     // socket.rooms.forEach((room) => socket.to(room).emit('bye'));
@@ -85,20 +105,31 @@ export class WsPlayAdapter implements OnGatewayConnection, OnGatewayDisconnect {
     this.playInfo.push({
       roomNumber: data.roomNumber,
       userInfo: [
-        new Map([
-          [
-            data.userId,
-            {
-              socId: [...socket.rooms][0],
-              userId: data.userId,
-              userName: data.userName,
-              userState: 'none',
-            },
-          ],
-        ]),
+        {
+          socId: [...socket.rooms][0],
+          userId: data.userId,
+          userName: data.userName,
+          userState: 'ready',
+          userRole: 'host',
+        },
       ],
+      // userInfo: [
+      //   new Map([
+      //     [
+      //       data.userId,
+      //       {
+      //         socId: [...socket.rooms][0],
+      //         userId: data.userId,
+      //         userName: data.userName,
+      //         userState: 'none',
+      //       },
+      //     ],
+      //   ]),
+      // ],
       userList: [data.userId],
     });
+    const playInfoIdx = this.getMyRoomIdx(data.roomNumber);
+    socket.emit('refreshUserList', this.playInfo[playInfoIdx]);
   }
 
   // user 방 입장
@@ -131,17 +162,24 @@ export class WsPlayAdapter implements OnGatewayConnection, OnGatewayDisconnect {
       }
     }
     this.playInfo[index].userInfo.push(
-      new Map([
-        [
-          data.userId,
-          {
-            socId: [...socket.rooms][0],
-            userId: data.userId,
-            userName: data.userName,
-            userState: 'none',
-          },
-        ],
-      ]),
+      {
+        socId: [...socket.rooms][0],
+        userId: data.userId,
+        userName: data.userName,
+        userState: 'none',
+        userRole: 'user',
+      },
+      // new Map([
+      //   [
+      //     data.userId,
+      //     {
+      //       socId: [...socket.rooms][0],
+      //       userId: data.userId,
+      //       userName: data.userName,
+      //       userState: 'none',
+      //     },
+      //   ],
+      // ]),
     );
     this.playInfo[index].userList.push(data.userId);
 
@@ -153,9 +191,19 @@ export class WsPlayAdapter implements OnGatewayConnection, OnGatewayDisconnect {
       .to(data.roomNumber)
       .emit('userJoinRoom', `${data.userName} 님이 입장하셨습니다.`);
 
+    // playInfoIdx : 현재 내가 들어와있는 방의 playInfo array Index를 저장
+    // let playInfoIdx = 0;
+    // for (let i = 0; i < this.playInfo.length; i++) {
+    //   if (this.playInfo[i].roomNumber == data.roomNumber) {
+    //     playInfoIdx = i;
+    //   }
+    // }
+
+    const playInfoIdx = this.getMyRoomIdx(data.roomNumber);
+
     this.server.sockets
       .in(data.roomNumber)
-      .emit('refreshUserList', this.playInfo[index].userInfo[0]);
+      .emit('refreshUserList', this.playInfo[playInfoIdx]);
   }
 
   @SubscribeMessage('serverConsoleView')
@@ -165,5 +213,17 @@ export class WsPlayAdapter implements OnGatewayConnection, OnGatewayDisconnect {
     //console.log([...socket.rooms][0]);
     console.log(this.playInfo);
     //console.log(this.playInfo[0].userInfo);
+  }
+
+  getMyRoomIdx(roomNumber) {
+    let playInfoIdx = 0;
+    for (let i = 0; i < this.playInfo.length; i++) {
+      if (this.playInfo[i].roomNumber == roomNumber) {
+        playInfoIdx = i;
+      }
+    }
+    //console.log('playInfo room number', this.playInfo[0].roomNumber);
+    //console.log('roomNumber', roomNumber);
+    return playInfoIdx;
   }
 }

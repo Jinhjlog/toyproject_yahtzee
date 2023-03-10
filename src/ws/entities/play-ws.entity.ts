@@ -1,5 +1,5 @@
 export class PlayWsEntity {
   roomNumber: number;
-  userInfo: Array<Map<string, object>>;
+  userInfo: Array<object>;
   userList: Array<string>;
 }

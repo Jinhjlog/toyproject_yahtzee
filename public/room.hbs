@@ -61,6 +61,12 @@
 
   socket.on('refreshUserList', (data) => {
     console.log(data);
+    userList_ul.innerHTML = '';
+    for(let i =0;i<data.userInfo.length; i++){
+      const li = document.createElement('li');
+      li.innerText = `${data.userInfo[i].userRole} : ${data.userInfo[i].userName} ==> ${data.userInfo[i].userState}`
+      userList_ul.appendChild(li);
+    }
   })
 
   function searchParam(key) {
@@ -69,6 +75,10 @@
 
   socket.on('disconnectHost', ()=> {
     location.href = '/'
+  })
+
+  socket.on('disconnectUser', (data)=> {
+    console.log(data);
   })
 
 
