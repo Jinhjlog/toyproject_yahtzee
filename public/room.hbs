@@ -40,7 +40,7 @@
 
   const startBtn = document.getElementById('startBtn') ;
   const readyBtn = document.getElementById('readyBtn');
-
+  const gameSetDiv = document.getElementById('gameSetBtn');
 
   if(searchParam('role') == 'host') {
     socket.emit('hostCreateRoom', {
@@ -103,6 +103,15 @@
 
   socket.on('gameStart', (data) => {
     console.log(data);
+    if(data == '시작') {
+      let diceBtn = document.createElement("button");
+      diceBtn.innerText = '주사위 던지기';
+      diceBtn.onclick = function() {
+        console.log('asdas');
+      }
+      gameSetDiv.innerText = '';
+      gameSetDiv.appendChild(diceBtn);
+    }
   })
 
   const testbtn = document.getElementById('testbtn');

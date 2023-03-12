@@ -6,7 +6,8 @@ export class GamePlayWsEntity {
   //   userName: user_name
   //   userScore: 유저 점수: 총 합 점수를 넣는다.
   // }
-  userDiceInfo: Array<object>;
+  userDiceTurn: Array<string>;
+  //userDiceInfo: Array<object>;
   // {
   //   userId: user_id
   //   diceCount: 3 // 남은 주사위 횟수

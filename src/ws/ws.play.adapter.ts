@@ -11,6 +11,7 @@ import { GameSetWsEntity } from './entities/game-set-ws.entity';
 import { rootLogger } from 'ts-jest';
 import { Inject } from '@nestjs/common';
 import { WsAdapter } from './ws.adapter';
+import { GamePlayWsEntity } from './entities/game-play-ws.entity';
 
 @WebSocketGateway(3131, {
   cors: { origin: '*' },
@@ -38,11 +39,11 @@ export class WsPlayAdapter implements OnGatewayConnection, OnGatewayDisconnect {
     if (socket['userRole'] === 'host') {
       let index = 0;
       let roomNumber = 0;
-      await this.playInfo.forEach((info) => {
+      await this.roomInfo.forEach((info) => {
         for (let i = 0; i < info.userInfo.length; i++) {
           if (info.userInfo[i]['userId'] == socket['userId']) {
             socket.to(info.roomNumber.toString()).emit('disconnectHost');
-            this.playInfo.splice(index, 1);
+            this.roomInfo.splice(index, 1);
             roomNumber = info.roomNumber;
           }
         }
@@ -53,20 +54,29 @@ export class WsPlayAdapter implements OnGatewayConnection, OnGatewayDisconnect {
     } else if (socket['userRole'] === 'user') {
       // 유저가 방을 나갔을 때 roomInfo에 있는 유저 정보를 삭제
       let index = 0;
-      this.playInfo.forEach((info) => {
+      this.roomInfo.forEach((info) => {
         for (let i = 0; i < info.userList.length; i++) {
           if (info.userList[i] === socket['userId']) {
-            this.playInfo[index].userList.splice(i, 1);
-            this.playInfo[index].userInfo.splice(i, 1);
-            userRoomNumber = this.playInfo[index].roomNumber;
+            this.roomInfo[index].userList.splice(i, 1);
+            this.roomInfo[index].userInfo.splice(i, 1);
+            userRoomNumber = this.roomInfo[index].roomNumber;
           }
         }
         index++;
       });
 
+      let gameInfoIdx = 0;
+      for (let i = 0; i < this.gameInfo.length; i++) {
+        if (this.gameInfo[i].roomNumber == userRoomNumber) {
+          gameInfoIdx = i;
+        }
+      }
+      console.log(gameInfoIdx);
+
       try {
-        const playInfoIdx = this.getMyRoomIdx(userRoomNumber);
-        //console.log(playInfoIdx);
+        const roomInfoIdx = this.getMyRoomIdx(userRoomNumber);
+        //console.log(roomInfoIdx);
+
         socket
           .to(userRoomNumber.toString())
           .emit(
@@ -74,14 +84,14 @@ export class WsPlayAdapter implements OnGatewayConnection, OnGatewayDisconnect {
             `${socket['userName']}이(가) 퇴장하셨습니다.`,
           );
         socket
-          .to(this.playInfo[playInfoIdx].roomNumber.toString())
-          .emit('refreshUserList', this.playInfo[playInfoIdx]);
+          .to(this.roomInfo[roomInfoIdx].roomNumber.toString())
+          .emit('refreshUserList', this.roomInfo[roomInfoIdx]);
       } catch (e) {}
     }
   }
 
-  private playInfo: GameSetWsEntity[] = [];
-
+  private roomInfo: GameSetWsEntity[] = [];
+  private gameInfo: GamePlayWsEntity[] = [];
   constructor(private db: PrismaService) {}
 
   // 방 생성
@@ -93,7 +103,7 @@ export class WsPlayAdapter implements OnGatewayConnection, OnGatewayDisconnect {
     socket.join(data.roomNumber);
     this.server.sockets.emit('refreshRoom', await this.db.getRoomList());
 
-    this.playInfo.push({
+    this.roomInfo.push({
       roomNumber: data.roomNumber,
       userInfo: [
         {
@@ -107,8 +117,8 @@ export class WsPlayAdapter implements OnGatewayConnection, OnGatewayDisconnect {
 
       userList: [data.userId],
     });
-    const playInfoIdx = this.getMyRoomIdx(data.roomNumber);
-    socket.emit('refreshUserList', this.playInfo[playInfoIdx]);
+    const roomInfoIdx = this.getMyRoomIdx(data.roomNumber);
+    socket.emit('refreshUserList', this.roomInfo[roomInfoIdx]);
   }
 
   // user 방 입장
@@ -126,45 +136,45 @@ export class WsPlayAdapter implements OnGatewayConnection, OnGatewayDisconnect {
     socket['userRole'] = data.userRole;
     socket['userName'] = data.userName;
 
-    for (let i = 0; i < this.playInfo.length; i++) {
-      if (this.playInfo[i].roomNumber == data.roomNumber) {
+    for (let i = 0; i < this.roomInfo.length; i++) {
+      if (this.roomInfo[i].roomNumber == data.roomNumber) {
         index = i;
       }
     }
-    this.playInfo[index].userInfo.push({
+    this.roomInfo[index].userInfo.push({
       socId: [...socket.rooms][0],
       userId: data.userId,
       userName: data.userName,
       userState: 'none',
       userRole: 'user',
     });
-    this.playInfo[index].userList.push(data.userId);
+    this.roomInfo[index].userList.push(data.userId);
     socket
       .to(data.roomNumber)
       .emit('userJoinRoom', `${data.userName} 님이 입장하셨습니다.`);
 
-    const playInfoIdx = this.getMyRoomIdx(data.roomNumber);
+    const roomInfoIdx = this.getMyRoomIdx(data.roomNumber);
 
     this.server.sockets
       .in(data.roomNumber)
-      .emit('refreshUserList', this.playInfo[playInfoIdx]);
+      .emit('refreshUserList', this.roomInfo[roomInfoIdx]);
   }
 
   // 유저 준비 버튼 클릭 시
   @SubscribeMessage('setUserReady')
   async setUserReady(socket: Socket, data) {
-    const playInfoIdx = this.getMyRoomIdx(data.roomNumber);
+    const roomInfoIdx = this.getMyRoomIdx(data.roomNumber);
 
-    for (let i = 0; i < this.playInfo[playInfoIdx].userInfo.length; i++) {
+    for (let i = 0; i < this.roomInfo[roomInfoIdx].userInfo.length; i++) {
       if (
-        this.playInfo[playInfoIdx].userInfo[i]['userId'] == socket['userId']
+        this.roomInfo[roomInfoIdx].userInfo[i]['userId'] == socket['userId']
       ) {
-        this.playInfo[playInfoIdx].userInfo[i]['userState'] == 'none'
-          ? (this.playInfo[playInfoIdx].userInfo[i]['userState'] = 'ready')
-          : (this.playInfo[playInfoIdx].userInfo[i]['userState'] = 'none');
+        this.roomInfo[roomInfoIdx].userInfo[i]['userState'] == 'none'
+          ? (this.roomInfo[roomInfoIdx].userInfo[i]['userState'] = 'ready')
+          : (this.roomInfo[roomInfoIdx].userInfo[i]['userState'] = 'none');
         this.server.sockets
           .in(data.roomNumber)
-          .emit('refreshUserList', this.playInfo[playInfoIdx]);
+          .emit('refreshUserList', this.roomInfo[roomInfoIdx]);
       }
     }
   }
@@ -172,15 +182,15 @@ export class WsPlayAdapter implements OnGatewayConnection, OnGatewayDisconnect {
   // host 게임 시작 버튼 클릭 시
   @SubscribeMessage('hostGameStart')
   async hostGameStart(socket: Socket, data) {
-    const playInfoIdx = this.getMyRoomIdx(data.roomNumber);
+    const roomInfoIdx = this.getMyRoomIdx(data.roomNumber);
 
     if (
       socket['userRole'] == 'host' &&
-      this.playInfo[playInfoIdx].userInfo.length >= 2
+      this.roomInfo[roomInfoIdx].userInfo.length >= 2
     ) {
       const noneList = [];
       let bool = true;
-      this.playInfo[playInfoIdx].userInfo.forEach((list) => {
+      this.roomInfo[roomInfoIdx].userInfo.forEach((list) => {
         if (list['userState'] != 'ready') {
           noneList.push(list['userName']);
           bool = false;
@@ -193,7 +203,11 @@ export class WsPlayAdapter implements OnGatewayConnection, OnGatewayDisconnect {
           this.server.sockets.emit(
             'refreshRoom',
             await this.adapter.getRoomList(),
-          ))
+          ),
+          await this.setGamePlayInfo({
+            roomInfoIdx: roomInfoIdx,
+            roomNumber: data.roomNumber,
+          }))
         : this.server.sockets.in(data.roomNumber).emit('gameStart', noneList);
     }
   }
@@ -203,17 +217,99 @@ export class WsPlayAdapter implements OnGatewayConnection, OnGatewayDisconnect {
     //console.log('host:', [...this.server.sockets.adapter.rooms.get(data)][0]);
     //console.log('------------------------------------------');
     //console.log([...socket.rooms][0]);
-    console.log(this.playInfo);
-    //console.log(this.playInfo[0].userInfo);
+    // console.log(this.roomInfo);
+    // console.log(this.roomInfo[0].userInfo);
+    console.log(this.gameInfo);
+    this.gameInfo.forEach((list) => {
+      console.log(list.userPlayInfo);
+      console.log(list.userYahtScore);
+    });
+
+    //console.log(this.roomInfo[0].userInfo);
   }
 
   getMyRoomIdx(roomNumber) {
-    let playInfoIdx = 0;
-    for (let i = 0; i < this.playInfo.length; i++) {
-      if (this.playInfo[i].roomNumber == roomNumber) {
-        playInfoIdx = i;
+    let roomInfoIdx = 0;
+    for (let i = 0; i < this.roomInfo.length; i++) {
+      if (this.roomInfo[i].roomNumber == roomNumber) {
+        roomInfoIdx = i;
       }
     }
-    return playInfoIdx;
+    return roomInfoIdx;
   }
+
+  async setGamePlayInfo(data) {
+    const playUserInfo = this.roomInfo[data.roomInfoIdx];
+
+    //console.log(playUserInfo);
+    // const playUserInfo = this.roomInfo[data.roomInfo];
+    // const userInfo = playUserInfo.userInfo;
+    const userPlayInfoArray = [];
+    const userPlayScoreArray = [];
+    let gameBool = true;
+
+    await this.gameInfo.forEach((list) => {
+      if (list.roomNumber == data.roomNumber) {
+        gameBool = false;
+      }
+    });
+
+    if (!gameBool) return;
+
+    console.log('진행');
+    for (let i = 0; i < playUserInfo.userList.length; i++) {
+      userPlayInfoArray.push({
+        userId: playUserInfo.userInfo[i]['userId'],
+        userName: playUserInfo.userInfo[i]['userName'],
+        userScore: 0,
+      });
+
+      userPlayScoreArray.push({
+        userId: playUserInfo.userInfo[i]['userId'],
+        ones: 0,
+        twos: 0,
+        threes: 0,
+        fours: 0,
+        fives: 0,
+        sixes: 0,
+        bonus: 0,
+        triple: 0,
+        four_card: 0,
+        full_house: 0,
+        small_straight: 0,
+        large_straight: 0,
+        Chance: 0,
+        Yahtzee: 0,
+        Yahtzee_bonus: 0,
+      });
+    }
+
+    this.gameInfo.push({
+      roomNumber: this.roomInfo[data.roomInfoIdx].roomNumber,
+      userPlayInfo: [userPlayInfoArray],
+      userDiceTurn: this.roomInfo[data.roomInfoIdx].userList,
+      userYahtScore: [userPlayScoreArray],
+    });
+
+    console.log(this.gameInfo);
+  }
+}
+
+interface gameScoreInfo {
+  userId: string;
+  ones: number;
+  twos: number;
+  threes: number;
+  fours: number;
+  fives: number;
+  sixes: number;
+  bonus: number;
+  triple: number;
+  four_card: number;
+  full_house: number;
+  small_straight: number;
+  large_straight: number;
+  Chance: number;
+  Yahtzee: number;
+  Yahtzee_bonus: number;
 }
