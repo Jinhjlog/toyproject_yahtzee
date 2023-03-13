@@ -424,6 +424,7 @@ export class WsPlayAdapter implements OnGatewayConnection, OnGatewayDisconnect {
 
     return diceArr;
   }
+  // 푸시?
 
   async userPutDice(diceResult, data) {
     // data는 변경할 dice의 인덱스를 가져옴
