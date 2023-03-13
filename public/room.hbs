@@ -60,6 +60,12 @@
   <button>다시 던지기</button>
 </div>
 
+<div id="scoreBoardDiv">
+  <h3></h3>
+  <ul>
+
+  </ul>
+</div>
 </body>
 <script>
   //const url = (window.location.href).replace('3000', '3131')
@@ -82,6 +88,8 @@
   const diceViewTr = document.getElementById('diceViewTr');
 
   const putDiceDiv = document.getElementById('putDiceDiv');
+
+  const endTurnBtn = document.getElementById('endTurnBtn')
 
   let diceResult;
 
@@ -171,7 +179,9 @@
       // for(let i = 0;i<data.diceResult.length; i++) {
       //   diceViewTr.querySelector(`td:nth-child(${(i+1)})`).innerText = data.diceResult[i];
       // }
+      console.log(data.scoreBoard);
       refreshDiceView(data)
+
     }
   })
 
@@ -187,7 +197,7 @@
   }
 
   putDiceDiv.querySelector('button').onclick = function() {
-    const arr = [];
+    let arr = [];
     for(let i = 0;i<putDiceArr.length; i++){
       if(putDiceArr[i]){
         arr.push(i);
@@ -199,6 +209,8 @@
       diceResult: diceResult,
       diceIndex: arr,
     })
+    putDiceArr = [false, false, false, false, false];
+    arr = [];
   }
 
   socket.on('putDice', (data) => {
@@ -206,7 +218,9 @@
       console.log(data.message);
       console.log(data.diceResult);
       diceResult = data.diceResult;
+      console.log(data);
       refreshDiceView(data)
+      //console.log(data.scoreBoard);
       putDiceArr = [false, false, false, false, false];
     } else {
       console.log(data.message);
@@ -220,6 +234,7 @@
       diceViewTr.querySelector(`td:nth-child(${(i+1)})`).innerText = data.diceResult[i];
     }
   }
+
 
 
 

@@ -350,9 +350,9 @@ export class WsPlayAdapter implements OnGatewayConnection, OnGatewayDisconnect {
           state: 'throw',
           message: `${socket['userId']} 이(가) 주사위를 던짐`,
           diceResult: diceResult,
+          scoreBoard: await this.refreshScoreBoard({ diceResult: diceResult }),
         });
         this.gameInfo[gameInfoIdx].userDiceSet['throwDice'] = false;
-        await this.refreshScoreBoard({ diceResult: diceResult });
       }
 
       // 주사위 턴 변경
@@ -382,15 +382,18 @@ export class WsPlayAdapter implements OnGatewayConnection, OnGatewayDisconnect {
       data.diceResult &&
       data.diceIndex.length > 0
     ) {
+      console.log(data.diceIndex);
       const diceResult = await this.userPutDice(
         data.diceResult,
         data.diceIndex,
       );
       this.gameInfo[gameInfoIdx].userDiceSet['diceCount'] -= 1;
+      console.log('result', diceResult);
       this.server.sockets.in(data.roomNumber.toString()).emit('putDice', {
         state: 'throw',
         message: `${socket['userId']} 이(가) 선택한 주사위를 다시 던짐`,
         diceResult: diceResult,
+        scoreBoard: await this.refreshScoreBoard({ diceResult: diceResult }),
       });
       await this.refreshScoreBoard({ diceResult: diceResult });
     } else {
@@ -416,6 +419,9 @@ export class WsPlayAdapter implements OnGatewayConnection, OnGatewayDisconnect {
     // data : 주사위 인덱스
   }
 
+  @SubscribeMessage('endTurn')
+  async endTurn(socket: Socket, data) {}
+
   async userThrowDice() {
     const diceArr = [];
     for (let i = 0; i < 5; i++) {
@@ -424,13 +430,13 @@ export class WsPlayAdapter implements OnGatewayConnection, OnGatewayDisconnect {
 
     return diceArr;
   }
-  // 푸시?
 
   async userPutDice(diceResult, data) {
     // data는 변경할 dice의 인덱스를 가져옴
     // ex) diceResult = [4, 5, 1, 1, 3]
     // ex) data = [0, 2, 3]
     const result = diceResult;
+    console.log(data)
     for (let i = 0; i < data.length; i++) {
       result[data[i]] = Math.floor(Math.random() * 6) + 1;
     }
@@ -438,6 +444,7 @@ export class WsPlayAdapter implements OnGatewayConnection, OnGatewayDisconnect {
     return result;
   }
 
+  // 현재 주사위 점수 가져오기
   async refreshScoreBoard(data) {
     const dice = data.diceResult;
     //console.log(dice); //type Array
@@ -487,7 +494,7 @@ export class WsPlayAdapter implements OnGatewayConnection, OnGatewayDisconnect {
     let diceSort = dice.sort();
     const set = new Set(diceSort);
     diceSort = [...set];
-    console.log('sort', diceSort);
+    //console.log('sort', diceSort);
     const smallStVal = [4, 5, 6];
     if (diceSort.length >= 5) {
       const smallSt2 = [[], []];
@@ -499,7 +506,7 @@ export class WsPlayAdapter implements OnGatewayConnection, OnGatewayDisconnect {
         smallSt2[i][1] += 2;
         smallSt2[i][2] += 1;
       }
-      console.log(smallSt2);
+      //console.log(smallSt2);
       for (let i = 0; i < smallSt2.length; i++) {
         for (let j = 0; j < smallStVal.length; j++) {
           if (smallSt2[i].filter((list) => smallStVal[j] === list).length >= 4)
@@ -529,7 +536,7 @@ export class WsPlayAdapter implements OnGatewayConnection, OnGatewayDisconnect {
           small_straight = 35;
         }
       }
-      console.log(smallSt1);
+      //console.log(smallSt1);
     }
 
     // 라지 스트레이트
@@ -550,28 +557,11 @@ export class WsPlayAdapter implements OnGatewayConnection, OnGatewayDisconnect {
       chance: chance,
       yahtzee: yahtzee,
     };
+    // 총 14개
+    // console.log(scoreObject);
 
-    console.log(scoreObject);
+    return scoreObject;
 
     //bonus = ones + twos + threes + fours + fives + sixes >= 63 ? 35 : 0;
   }
-}
-
-interface gameScoreInfo {
-  userId: string;
-  ones: number;
-  twos: number;
-  threes: number;
-  fours: number;
-  fives: number;
-  sixes: number;
-  bonus: number;
-  triple: number;
-  four_card: number;
-  full_house: number;
-  small_straight: number;
-  large_straight: number;
-  Chance: number;
-  Yahtzee: number;
-  Yahtzee_bonus: number;
 }
