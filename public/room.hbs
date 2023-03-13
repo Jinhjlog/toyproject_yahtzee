@@ -6,6 +6,15 @@
   <script src="https://cdn.socket.io/4.3.2/socket.io.min.js"
           integrity="sha384-KAZ4DtjNhLChOB/hxXuKqhMLYvx3b5MlT55xPEiNmREKRzeEm+RVPlTnAn0ajQNs"
           crossorigin="anonymous"></script>
+  <style>
+    table {
+      border: 1px solid black;
+    }
+    td {
+      border: 1px solid black;
+      text-align: center;
+    }
+  </style>
 </head>
 <body>
 <h1>room</h1>
@@ -26,6 +35,31 @@
   <button id="startBtn">시작</button>
 </div>
 
+<hr>
+<br>
+
+<table id="diceTable" style="border: 1px solid black">
+  <tr id="diceBtnTr">
+    <td><button>주사위 1 선택</button></td>
+    <td><button>주사위 2 선택</button></td>
+    <td><button>주사위 3 선택</button></td>
+    <td><button>주사위 4 선택</button></td>
+    <td><button>주사위 5 선택</button></td>
+  </tr>
+  <tr id="diceViewTr">
+    <td></td>
+    <td></td>
+    <td></td>
+    <td></td>
+    <td></td>
+  </tr>
+</table>
+<hr>
+<div id="putDiceDiv">
+  <h4>선택한 주사위 다시 던지기</h4>
+  <button>다시 던지기</button>
+</div>
+
 </body>
 <script>
   //const url = (window.location.href).replace('3000', '3131')
@@ -41,6 +75,15 @@
   const startBtn = document.getElementById('startBtn') ;
   const readyBtn = document.getElementById('readyBtn');
   const gameSetDiv = document.getElementById('gameSetBtn');
+
+  const diceTable = document.getElementById('diceTable');
+  const diceBtnTr = document.getElementById('diceBtnTr');
+  let putDiceArr = [false, false, false, false, false];
+  const diceViewTr = document.getElementById('diceViewTr');
+
+  const putDiceDiv = document.getElementById('putDiceDiv');
+
+  let diceResult;
 
   if(searchParam('role') == 'host') {
     socket.emit('hostCreateRoom', {
@@ -107,12 +150,78 @@
       let diceBtn = document.createElement("button");
       diceBtn.innerText = '주사위 던지기';
       diceBtn.onclick = function() {
-        console.log('asdas');
+        socket.emit('throwDice', {
+          roomNumber: searchParam('roomNumber'),
+        })
       }
       gameSetDiv.innerText = '';
       gameSetDiv.appendChild(diceBtn);
     }
   })
+
+  // 던진 주사위 서버로부터 데이터 받기
+  socket.on('throwDice', (data) => {
+    if(data.state == 'error'){
+      console.log(data.message);
+    }else {
+      console.log(data.message);
+      console.log(data.diceResult);
+      diceResult = data.diceResult;
+      //console.log(data.diceResult[3])
+      // for(let i = 0;i<data.diceResult.length; i++) {
+      //   diceViewTr.querySelector(`td:nth-child(${(i+1)})`).innerText = data.diceResult[i];
+      // }
+      refreshDiceView(data)
+    }
+  })
+
+  for(let i = 0;i<5;i++){
+    diceBtnTr.querySelector(`td:nth-child(${(i+1)}) > button`).onclick = function () {
+      if(!putDiceArr[i]){
+        putDiceArr[i] = true;
+      } else {
+        putDiceArr[i] = false;
+      }
+      console.log(putDiceArr)
+    }
+  }
+
+  putDiceDiv.querySelector('button').onclick = function() {
+    const arr = [];
+    for(let i = 0;i<putDiceArr.length; i++){
+      if(putDiceArr[i]){
+        arr.push(i);
+      }
+    }
+    console.log('putIndex', arr);
+    socket.emit('putDice', {
+      roomNumber: searchParam('roomNumber'),
+      diceResult: diceResult,
+      diceIndex: arr,
+    })
+  }
+
+  socket.on('putDice', (data) => {
+    if(data.state == 'throw') {
+      console.log(data.message);
+      console.log(data.diceResult);
+      diceResult = data.diceResult;
+      refreshDiceView(data)
+      putDiceArr = [false, false, false, false, false];
+    } else {
+      console.log(data.message);
+      putDiceArr = [false, false, false, false, false];
+    }
+  })
+
+  function refreshDiceView(data){
+    for(let i = 0;i<data.diceResult.length; i++) {
+      diceViewTr.querySelector(`td:nth-child(${(i+1)})`).innerText = '';
+      diceViewTr.querySelector(`td:nth-child(${(i+1)})`).innerText = data.diceResult[i];
+    }
+  }
+
+
 
   const testbtn = document.getElementById('testbtn');
 

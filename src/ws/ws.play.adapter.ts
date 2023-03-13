@@ -49,6 +49,18 @@ export class WsPlayAdapter implements OnGatewayConnection, OnGatewayDisconnect {
         }
         index++;
       });
+
+      let gameInfoIdx = 0;
+      for (let i = 0; i < this.gameInfo.length; i++) {
+        if (this.gameInfo[i].roomNumber == roomNumber) {
+          gameInfoIdx = i;
+        }
+      }
+
+      try {
+        this.gameInfo.splice(gameInfoIdx, 1);
+      } catch (e) {}
+
       await this.db.deleteRoom(roomNumber);
       this.server.sockets.emit('refreshRoom', await this.db.getRoomList());
     } else if (socket['userRole'] === 'user') {
@@ -71,7 +83,22 @@ export class WsPlayAdapter implements OnGatewayConnection, OnGatewayDisconnect {
           gameInfoIdx = i;
         }
       }
-      console.log(gameInfoIdx);
+
+      try {
+        for (
+          let i = 0;
+          i < this.gameInfo[gameInfoIdx].userPlayInfo.length;
+          i++
+        ) {
+          if (
+            this.gameInfo[gameInfoIdx].userPlayInfo[i]['userId'] ==
+            socket['userId']
+          ) {
+            this.gameInfo[gameInfoIdx].userPlayInfo.splice(i, 1);
+            this.gameInfo[gameInfoIdx].userYahtScore.splice(i, 1);
+          }
+        }
+      } catch (e) {}
 
       try {
         const roomInfoIdx = this.getMyRoomIdx(userRoomNumber);
@@ -286,12 +313,246 @@ export class WsPlayAdapter implements OnGatewayConnection, OnGatewayDisconnect {
 
     this.gameInfo.push({
       roomNumber: this.roomInfo[data.roomInfoIdx].roomNumber,
-      userPlayInfo: [userPlayInfoArray],
+      userPlayInfo: userPlayInfoArray,
       userDiceTurn: this.roomInfo[data.roomInfoIdx].userList,
-      userYahtScore: [userPlayScoreArray],
+      userYahtScore: userPlayScoreArray,
+      gameRound: 1,
+      userDiceSet: {
+        throwDice: true,
+        diceCount: 99,
+      },
+    });
+  }
+
+  @SubscribeMessage('throwDice')
+  async throwDice(socket: Socket, data) {
+    // data에 있어야 할 것
+    // {
+    //   roomNumber = 방번호
+    // }
+
+    let gameInfoIdx = 0;
+    for (let i = 0; i < this.gameInfo.length; i++) {
+      if (this.gameInfo[i].roomNumber == data.roomNumber) {
+        gameInfoIdx = i;
+      }
+    }
+
+    if (this.gameInfo[gameInfoIdx].userDiceTurn[0] == socket['userId']) {
+      if (!this.gameInfo[gameInfoIdx].userDiceSet['throwDice']) {
+        socket.emit('throwDice', {
+          state: 'error',
+          message: `주사위는 한번 만 던질 수 있음`,
+        });
+      } else {
+        const diceResult = await this.userThrowDice();
+        this.server.sockets.in(data.roomNumber.toString()).emit('throwDice', {
+          state: 'throw',
+          message: `${socket['userId']} 이(가) 주사위를 던짐`,
+          diceResult: diceResult,
+        });
+        this.gameInfo[gameInfoIdx].userDiceSet['throwDice'] = false;
+        await this.refreshScoreBoard({ diceResult: diceResult });
+      }
+
+      // 주사위 턴 변경
+      // this.gameInfo[gameInfoIdx].userDiceTurn.shift();
+      // this.gameInfo[gameInfoIdx].userDiceTurn.push(socket['userId']);
+    } else {
+      socket.emit('throwDice', {
+        state: 'error',
+        message: `${this.gameInfo[gameInfoIdx].userDiceTurn[0]}의 턴`,
+      });
+    }
+  }
+
+  // 선택한 주사위 다시 던지기
+  @SubscribeMessage('putDice')
+  async putDice(socket: Socket, data) {
+    let gameInfoIdx;
+    for (let i = 0; i < this.gameInfo.length; i++) {
+      if (this.gameInfo[i].roomNumber == data.roomNumber) {
+        gameInfoIdx = i;
+      }
+    }
+
+    if (
+      socket['userId'] == this.gameInfo[gameInfoIdx].userDiceTurn[0] &&
+      this.gameInfo[gameInfoIdx].userDiceSet['diceCount'] > 0 &&
+      data.diceResult &&
+      data.diceIndex.length > 0
+    ) {
+      const diceResult = await this.userPutDice(
+        data.diceResult,
+        data.diceIndex,
+      );
+      this.gameInfo[gameInfoIdx].userDiceSet['diceCount'] -= 1;
+      this.server.sockets.in(data.roomNumber.toString()).emit('putDice', {
+        state: 'throw',
+        message: `${socket['userId']} 이(가) 선택한 주사위를 다시 던짐`,
+        diceResult: diceResult,
+      });
+      await this.refreshScoreBoard({ diceResult: diceResult });
+    } else {
+      if (socket['userId'] == this.gameInfo[gameInfoIdx].userDiceTurn[0]) {
+        if (this.gameInfo[gameInfoIdx].userDiceSet['diceCount'] <= 0) {
+          socket.emit('putDice', {
+            state: 'error',
+            message: '남은 주사위가 없음',
+          });
+        } else {
+          socket.emit('putDice', {
+            state: 'error',
+            message: '주사위가 선택되지 않음',
+          });
+        }
+      } else {
+        socket.emit('putDice', {
+          state: 'error',
+          message: `${this.gameInfo[gameInfoIdx].userDiceTurn[0]}의 턴`,
+        });
+      }
+    }
+    // data : 주사위 인덱스
+  }
+
+  async userThrowDice() {
+    const diceArr = [];
+    for (let i = 0; i < 5; i++) {
+      diceArr.push(Math.floor(Math.random() * 6) + 1);
+    }
+
+    return diceArr;
+  }
+
+  async userPutDice(diceResult, data) {
+    // data는 변경할 dice의 인덱스를 가져옴
+    // ex) diceResult = [4, 5, 1, 1, 3]
+    // ex) data = [0, 2, 3]
+    const result = diceResult;
+    for (let i = 0; i < data.length; i++) {
+      result[data[i]] = Math.floor(Math.random() * 6) + 1;
+    }
+
+    return result;
+  }
+
+  async refreshScoreBoard(data) {
+    const dice = data.diceResult;
+    //console.log(dice); //type Array
+    //console.log(typeof dice[0]); // type Number
+    let triple = 0,
+      four_card = 0,
+      full_house = 0,
+      small_straight = 0,
+      large_straight = 0,
+      chance = 0,
+      yahtzee = 0,
+      yahtzee_bonus;
+
+    dice.forEach((data) => {
+      // 트리플
+      if (dice.filter((list) => data === list).length >= 3) {
+        triple = dice.reduce((sum, currValue) => {
+          return sum + currValue;
+        }, 0);
+      }
+      // 포 카드
+      if (dice.filter((list) => data === list).length >= 4) {
+        four_card = dice.reduce((sum, currValue) => {
+          return sum + currValue;
+        }, 0);
+      }
+      // 풀 하우스
+      if (dice.filter((list) => data === list).length >= 3) {
+        const temp = dice.filter((elem) => elem !== data);
+        for (let i = 0; i < temp.length; i++) {
+          if (temp.filter((tempList) => temp[i] === tempList).length >= 2) {
+            full_house = 25;
+          }
+        }
+      }
+
+      // 찬스
+      chance += data;
+
+      // 야찌
+      if (dice.filter((list) => data === list).length >= 5) {
+        yahtzee = 50;
+      }
     });
 
-    console.log(this.gameInfo);
+    // 스몰 스트레이트
+    let diceSort = dice.sort();
+    const set = new Set(diceSort);
+    diceSort = [...set];
+    console.log('sort', diceSort);
+    const smallStVal = [4, 5, 6];
+    if (diceSort.length >= 5) {
+      const smallSt2 = [[], []];
+      for (let i = 0; i < 2; i++) {
+        for (let j = 0; j < 4; j++) {
+          smallSt2[i].push(diceSort[i + j]);
+        }
+        smallSt2[i][0] += 3;
+        smallSt2[i][1] += 2;
+        smallSt2[i][2] += 1;
+      }
+      console.log(smallSt2);
+      for (let i = 0; i < smallSt2.length; i++) {
+        for (let j = 0; j < smallStVal.length; j++) {
+          if (smallSt2[i].filter((list) => smallStVal[j] === list).length >= 4)
+            small_straight = 35;
+        }
+      }
+      const largeSt = diceSort;
+      largeSt[0] += 4;
+      largeSt[1] += 3;
+      largeSt[2] += 2;
+      largeSt[3] += 1;
+
+      for (let i = 0; i < 2; i++) {
+        if (largeSt.filter((list) => smallStVal[i + 1] === list).length >= 5)
+          large_straight = 40;
+      }
+    } else if (diceSort.length >= 4) {
+      const smallSt1 = [];
+      for (let i = 0; i < diceSort.length; i++) {
+        smallSt1.push(diceSort[i]);
+      }
+      smallSt1[0] += 3;
+      smallSt1[1] += 2;
+      smallSt1[2] += 1;
+      for (let i = 0; i < smallStVal.length; i++) {
+        if (smallSt1.filter((list) => smallStVal[i] === list).length >= 4) {
+          small_straight = 35;
+        }
+      }
+      console.log(smallSt1);
+    }
+
+    // 라지 스트레이트
+
+    const scoreObject = {
+      ones: dice.filter((data) => 1 === data).length * 1,
+      twos: dice.filter((data) => 2 === data).length * 2,
+      threes: dice.filter((data) => 3 === data).length * 3,
+      fours: dice.filter((data) => 4 === data).length * 4,
+      fives: dice.filter((data) => 5 === data).length * 5,
+      sixes: dice.filter((data) => 6 === data).length * 6,
+
+      triple: triple,
+      four_card: four_card,
+      full_house: full_house,
+      small_straight: small_straight,
+      large_straight: large_straight,
+      chance: chance,
+      yahtzee: yahtzee,
+    };
+
+    console.log(scoreObject);
+
+    //bonus = ones + twos + threes + fours + fives + sixes >= 63 ? 35 : 0;
   }
 }
 
