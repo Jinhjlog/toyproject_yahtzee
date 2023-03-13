@@ -231,8 +231,13 @@
   function refreshDiceView(data){
     for(let i = 0;i<data.diceResult.length; i++) {
       diceViewTr.querySelector(`td:nth-child(${(i+1)})`).innerText = '';
-      diceViewTr.querySelector(`td:nth-child(${(i+1)})`).innerText = data.diceResult[i];
     }
+    diceViewTr.querySelector(`td:nth-child(1)`).innerText = data.diceResult.firstDice;
+    diceViewTr.querySelector(`td:nth-child(2)`).innerText = data.diceResult.secDice;
+    diceViewTr.querySelector(`td:nth-child(3)`).innerText = data.diceResult.trdDice;
+    diceViewTr.querySelector(`td:nth-child(4)`).innerText = data.diceResult.fothDice;
+    diceViewTr.querySelector(`td:nth-child(5)`).innerText = data.diceResult.fithDice;
+
   }
 
 

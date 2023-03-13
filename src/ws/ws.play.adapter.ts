@@ -246,7 +246,7 @@ export class WsPlayAdapter implements OnGatewayConnection, OnGatewayDisconnect {
     //console.log([...socket.rooms][0]);
     // console.log(this.roomInfo);
     // console.log(this.roomInfo[0].userInfo);
-    console.log(this.gameInfo);
+    // console.log(this.gameInfo);
     this.gameInfo.forEach((list) => {
       console.log(list.userPlayInfo);
       console.log(list.userYahtScore);
@@ -382,20 +382,20 @@ export class WsPlayAdapter implements OnGatewayConnection, OnGatewayDisconnect {
       data.diceResult &&
       data.diceIndex.length > 0
     ) {
-      console.log(data.diceIndex);
+      // console.log(data.diceIndex);
       const diceResult = await this.userPutDice(
         data.diceResult,
         data.diceIndex,
       );
       this.gameInfo[gameInfoIdx].userDiceSet['diceCount'] -= 1;
-      console.log('result', diceResult);
+      // console.log('result', diceResult);
       this.server.sockets.in(data.roomNumber.toString()).emit('putDice', {
         state: 'throw',
         message: `${socket['userId']} 이(가) 선택한 주사위를 다시 던짐`,
         diceResult: diceResult,
         scoreBoard: await this.refreshScoreBoard({ diceResult: diceResult }),
       });
-      await this.refreshScoreBoard({ diceResult: diceResult });
+      //await this.refreshScoreBoard({ diceResult: diceResult });
     } else {
       if (socket['userId'] == this.gameInfo[gameInfoIdx].userDiceTurn[0]) {
         if (this.gameInfo[gameInfoIdx].userDiceSet['diceCount'] <= 0) {
@@ -428,7 +428,13 @@ export class WsPlayAdapter implements OnGatewayConnection, OnGatewayDisconnect {
       diceArr.push(Math.floor(Math.random() * 6) + 1);
     }
 
-    return diceArr;
+    return {
+      firstDice: diceArr[0],
+      secDice: diceArr[1],
+      trdDice: diceArr[2],
+      fothDice: diceArr[3],
+      fithDice: diceArr[4],
+    };
   }
 
   async userPutDice(diceResult, data) {
@@ -436,17 +442,50 @@ export class WsPlayAdapter implements OnGatewayConnection, OnGatewayDisconnect {
     // ex) diceResult = [4, 5, 1, 1, 3]
     // ex) data = [0, 2, 3]
     const result = diceResult;
-    console.log(data)
+    // console.log(result);
+
+    for (let i = 0; i < data.length; i++) {
+      const dice = Math.floor(Math.random() * 6) + 1;
+      switch (data[i]) {
+        case 0:
+          result.firstDice = dice;
+          break;
+        case 1:
+          result.secDice = dice;
+          break;
+        case 2:
+          result.trdDice = dice;
+          break;
+        case 3:
+          result.fothDice = dice;
+          break;
+        case 4:
+          result.fithDice = dice;
+          break;
+      }
+    }
+    /*
     for (let i = 0; i < data.length; i++) {
       result[data[i]] = Math.floor(Math.random() * 6) + 1;
     }
-
+    console.log(typeof result);*/
+    console.log(result);
     return result;
   }
 
   // 현재 주사위 점수 가져오기
   async refreshScoreBoard(data) {
-    const dice = data.diceResult;
+    // console.log(data);
+    // const dice = data.diceResult;
+
+    const dice = [
+      data.diceResult.firstDice,
+      data.diceResult.secDice,
+      data.diceResult.trdDice,
+      data.diceResult.fothDice,
+      data.diceResult.fithDice,
+    ];
+
     //console.log(dice); //type Array
     //console.log(typeof dice[0]); // type Number
     let triple = 0,
