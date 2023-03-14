@@ -34,7 +34,10 @@
   <button id="readyBtn">준비</button>
   <button id="startBtn">시작</button>
 </div>
-
+<div id="userScoreBoard">
+  <ul>
+  </ul>
+</div>
 <hr>
 <br>
 
@@ -176,6 +179,8 @@
   const diceScoreTable = document.getElementById('diceScoreTable');
 
   let diceResult;
+
+  const userScoreBoard = document.getElementById('userScoreBoard');
 
   if(searchParam('role') == 'host') {
     socket.emit('hostCreateRoom', {
@@ -416,10 +421,29 @@
 
       }
     }
-
-
   }
 
+  socket.on('userScoreInfo', (data) => {
+    const userScoreBoardUl = userScoreBoard.querySelector('ul')
+    userScoreBoardUl.innerHTML = '';
+    console.log(typeof data);
+    for(let i = 0;i<data.length;i++){
+      const li = document.createElement('li');
+      li.innerText = `${data[i].userName} : ${data[i].userScore}`
+      userScoreBoardUl.appendChild(li);
+    }
+  })
+
+  socket.on('gameEnd', (data) => {
+    console.log('게임 끝')
+    console.log(data);
+    let str ='\n';
+    for(let i = 0;i<data.length; i++){
+      str += `${i+1}. ${data[i].userName} : ${data[i].userScore}\n`
+    }
+    alert(`결과\n${str}`)
+    location.href = '/';
+  })
 
 
 

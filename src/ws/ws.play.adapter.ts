@@ -328,10 +328,10 @@ export class WsPlayAdapter implements OnGatewayConnection, OnGatewayDisconnect {
       userPlayInfo: userPlayInfoArray,
       userDiceTurn: this.roomInfo[data.roomInfoIdx].userList,
       userYahtScore: userPlayScoreArray,
-      gameRound: 1,
+      gameRound: 0,
       userDiceSet: {
         throwDice: true,
-        diceCount: 99,
+        diceCount: 2,
       },
     });
   }
@@ -452,13 +452,18 @@ export class WsPlayAdapter implements OnGatewayConnection, OnGatewayDisconnect {
     }
 
     // 다음사람 점수판 가져오기
-    let scoreBoard;
+    let scoreBoard, userPlayInfoIdx;
     for (let i = 0; i < this.gameInfo[gameInfoIdx].userYahtScore.length; i++) {
       if (
         this.gameInfo[gameInfoIdx].userDiceTurn[1] ==
         this.gameInfo[gameInfoIdx].userYahtScore[i]['userId']
       ) {
         scoreBoard = this.gameInfo[gameInfoIdx].userYahtScore[i];
+      }
+      if (
+        this.gameInfo[gameInfoIdx].userPlayInfo[i]['userId'] == socket['userId']
+      ) {
+        userPlayInfoIdx = i;
       }
     }
     console.log(data);
@@ -482,9 +487,33 @@ export class WsPlayAdapter implements OnGatewayConnection, OnGatewayDisconnect {
           this.gameInfo[gameInfoIdx].userDiceTurn.push(socket['userId']);
           this.gameInfo[gameInfoIdx].userDiceSet['throwDice'] = true;
           console.log(this.gameInfo[gameInfoIdx].userYahtScore[i]);
+          this.gameInfo[gameInfoIdx].userDiceSet['diceCount'] = 2;
           this.server.sockets
             .in(data.roomNumber)
             .emit('userScoreBoard', scoreBoard);
+          this.gameInfo[gameInfoIdx].userPlayInfo[userPlayInfoIdx][
+            'userScore'
+          ] += Number(data.scoreValue);
+          this.gameInfo[gameInfoIdx].gameRound += 1;
+          this.server.sockets
+            .in(data.roomNumber)
+            .emit('userScoreInfo', this.gameInfo[gameInfoIdx].userPlayInfo);
+          if (
+            this.gameInfo[gameInfoIdx].gameRound ==
+            this.gameInfo[gameInfoIdx].userDiceTurn.length * 3 // 게임 라운드
+          ) {
+            console.log('게임 끝');
+            const result = this.gameInfo[gameInfoIdx].userPlayInfo.sort(
+              (a, b) => {
+                return a['userScore'] - b['userScore'];
+              },
+            );
+            this.server.sockets
+              .in(data.roomNumber)
+              .emit('gameEnd', result.reverse());
+
+
+          }
         } else {
           console.log('이미 입력된 점수');
           socket.emit('error', {
