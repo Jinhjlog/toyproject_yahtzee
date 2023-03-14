@@ -293,21 +293,21 @@ export class WsPlayAdapter implements OnGatewayConnection, OnGatewayDisconnect {
 
       userPlayScoreArray.push({
         userId: playUserInfo.userInfo[i]['userId'],
-        ones: 0,
-        twos: 0,
-        threes: 0,
-        fours: 0,
-        fives: 0,
-        sixes: 0,
-        bonus: 0,
-        triple: 0,
-        four_card: 0,
-        full_house: 0,
-        small_straight: 0,
-        large_straight: 0,
-        Chance: 0,
-        Yahtzee: 0,
-        Yahtzee_bonus: 0,
+        ones: null,
+        twos: null,
+        threes: null,
+        fours: null,
+        fives: null,
+        sixes: null,
+        bonus: null,
+        triple: null,
+        four_card: null,
+        full_house: null,
+        small_straight: null,
+        large_straight: null,
+        chance: null,
+        yahtzee: null,
+        yahtzee_bonus: null,
       });
     }
 
@@ -380,7 +380,8 @@ export class WsPlayAdapter implements OnGatewayConnection, OnGatewayDisconnect {
       socket['userId'] == this.gameInfo[gameInfoIdx].userDiceTurn[0] &&
       this.gameInfo[gameInfoIdx].userDiceSet['diceCount'] > 0 &&
       data.diceResult &&
-      data.diceIndex.length > 0
+      data.diceIndex.length > 0 &&
+      !this.gameInfo[gameInfoIdx].userDiceSet['throwDice']
     ) {
       // console.log(data.diceIndex);
       const diceResult = await this.userPutDice(
@@ -419,8 +420,77 @@ export class WsPlayAdapter implements OnGatewayConnection, OnGatewayDisconnect {
     // data : 주사위 인덱스
   }
 
-  @SubscribeMessage('endTurn')
-  async endTurn(socket: Socket, data) {}
+  @SubscribeMessage('saveScore')
+  async endTurn(socket: Socket, data) {
+    let gameInfoIdx = 0;
+    for (let i = 0; i < this.gameInfo.length; i++) {
+      if (this.gameInfo[i].roomNumber == data.roomNumber) {
+        gameInfoIdx = i;
+      }
+    }
+
+    for (let i = 0; i < this.gameInfo[gameInfoIdx].userYahtScore.length; i++) {
+      if (
+        this.gameInfo[gameInfoIdx].userYahtScore[i]['userId'] ==
+          socket['userId'] &&
+        !this.gameInfo[gameInfoIdx].userYahtScore[i][data.scoreType] &&
+        !this.gameInfo[gameInfoIdx].userDiceSet['throwDice'] &&
+        this.gameInfo[gameInfoIdx].userDiceTurn[0] == socket['userId']
+      ) {
+        this.gameInfo[gameInfoIdx].userYahtScore[i][data.scoreType] = Number(
+          data.scoreValue,
+        );
+        this.gameInfo[gameInfoIdx].userDiceTurn.shift();
+        this.gameInfo[gameInfoIdx].userDiceTurn.push(socket['userId']);
+        this.gameInfo[gameInfoIdx].userDiceSet['throwDice'] = true;
+      }
+    }
+    /*
+    switch (data.scoreType) {
+      case 'ones':
+        console.log(gameInfoIdx);
+        for (
+          let i = 0;
+          i < this.gameInfo[gameInfoIdx].userYahtScore.length;
+          i++
+        ) {
+          if (
+            this.gameInfo[gameInfoIdx].userYahtScore[i]['userId'] ==
+            socket['userId']
+          ) {
+            this.gameInfo[gameInfoIdx].userYahtScore[i][data.scoreType] =
+              Number(data.scoreValue);
+          }
+        }
+        break;
+      case 'twos':
+        break;
+      case 'threes':
+        break;
+      case 'fours':
+        break;
+      case 'fives':
+        break;
+      case 'sixes':
+        break;
+      case 'triple':
+        break;
+      case 'four_card':
+        break;
+      case 'full_house':
+        break;
+      case 'small_straight':
+        break;
+      case 'large_straight':
+        break;
+      case 'chance':
+        break;
+      case 'yahtzee':
+        break;
+    }
+
+     */
+  }
 
   async userThrowDice() {
     const diceArr = [];

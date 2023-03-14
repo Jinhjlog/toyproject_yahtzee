@@ -61,10 +61,79 @@
 </div>
 
 <div id="scoreBoardDiv">
-  <h3></h3>
-  <ul>
+  <h3>점수판</h3>
+  <table id="diceScoreTable">
+    <tr>
+      <td>ones</td>
+      <td></td>
+      <td><button>선택</button></td>
+    </tr>
+    <tr>
+      <td>twos</td>
+      <td></td>
+      <td><button>선택</button></td>
+    </tr>
+    <tr>
+      <td>threes</td>
+      <td></td>
+      <td><button>선택</button></td>
+    </tr>
+    <tr>
+      <td>fours</td>
+      <td></td>
+      <td><button>선택</button></td>
+    </tr>
+    <tr>
+      <td>fives</td>
+      <td></td>
+      <td><button>선택</button></td>
+    </tr>
+    <tr>
+      <td>sixes</td>
+      <td></td>
+      <td><button>선택</button></td>
+    </tr>
+    <tr>
+      <td>bonus</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>triple</td>
+      <td></td>
+      <td><button>선택</button></td>
+    </tr>
+    <tr>
+      <td>four_card</td>
+      <td></td>
+      <td><button>선택</button></td>
+    </tr>
+    <tr>
+      <td>full_house</td>
+      <td></td>
+      <td><button>선택</button></td>
+    </tr>
+    <tr>
+      <td>small_straight</td>
+      <td></td>
+      <td><button>선택</button></td>
+    </tr>
+    <tr>
+      <td>large_straight</td>
+      <td></td>
+      <td><button>선택</button></td>
+    </tr>
+    <tr>
+      <td>chance</td>
+      <td></td>
+      <td><button>선택</button></td>
+    </tr>
+    <tr>
+      <td>yahtzee</td>
+      <td></td>
+      <td><button>선택</button></td>
+    </tr>
+  </table>
 
-  </ul>
 </div>
 </body>
 <script>
@@ -89,7 +158,9 @@
 
   const putDiceDiv = document.getElementById('putDiceDiv');
 
-  const endTurnBtn = document.getElementById('endTurnBtn')
+  const endTurnBtn = document.getElementById('endTurnBtn');
+
+  const diceScoreTable = document.getElementById('diceScoreTable');
 
   let diceResult;
 
@@ -181,7 +252,7 @@
       // }
       console.log(data.scoreBoard);
       refreshDiceView(data)
-
+      refreshScoreBoard(data.scoreBoard)
     }
   })
 
@@ -220,6 +291,7 @@
       diceResult = data.diceResult;
       console.log(data);
       refreshDiceView(data)
+      refreshScoreBoard(data.scoreBoard)
       //console.log(data.scoreBoard);
       putDiceArr = [false, false, false, false, false];
     } else {
@@ -242,11 +314,64 @@
 
 
 
+  function refreshScoreBoard(data){
+    const scoreArr = [];
+    scoreArr.push(data.ones);
+    scoreArr.push(data.twos);
+    scoreArr.push(data.threes);
+    scoreArr.push(data.fours);
+    scoreArr.push(data.fives);
+    scoreArr.push(data.sixes);
+    scoreArr.push(0)
+    scoreArr.push(data.triple);
+    scoreArr.push(data.four_card);
+    scoreArr.push(data.full_house);
+    scoreArr.push(data.small_straight);
+    scoreArr.push(data.large_straight);
+    scoreArr.push(data.chance);
+    scoreArr.push(data.yahtzee);
+
+    for(let i = 0; i< scoreArr.length; i++){
+      diceScoreTable.querySelector(`tr:nth-child(${i+1}) td:nth-child(2)`).innerText = scoreArr[i];
+    }
+  }
+
+  for(let i = 0;i< 6; i++){
+    diceScoreTable.querySelector(`tr:nth-child(${i+1}) > td:nth-child(3) > button`).addEventListener('click', () => {
+      const scoreVal = diceScoreTable.querySelector(`tr:nth-child(${i+1}) > td:nth-child(2)`).innerText;
+      const scoreType = diceScoreTable.querySelector(`tr:nth-child(${i+1}) > td:nth-child(1)`).innerText;
+      console.log(scoreVal);
+      console.log(scoreType);
+
+      socket.emit('saveScore', {
+        roomNumber: searchParam('roomNumber'),
+        scoreType: scoreType,
+        scoreValue: scoreVal,
+      })
+    })
+  }
+  for(let i = 7;i< 14; i++){
+    diceScoreTable.querySelector(`tr:nth-child(${i+1}) > td:nth-child(3) > button`).addEventListener('click', () => {
+      const scoreVal = diceScoreTable.querySelector(`tr:nth-child(${i+1}) > td:nth-child(2)`).innerText;
+      const scoreType = diceScoreTable.querySelector(`tr:nth-child(${i+1}) > td:nth-child(1)`).innerText;
+      console.log(scoreVal);
+      console.log(scoreType)
+      socket.emit('saveScore', {
+        roomNumber: searchParam('roomNumber'),
+        scoreType: scoreType,
+        scoreValue: scoreVal,
+      })
+    })
+  }
 
   const testbtn = document.getElementById('testbtn');
 
   testbtn.addEventListener('click', () => {
     socket.emit('serverConsoleView', searchParam('roomNumber'));
+  })
+
+  socket.on('error', (data) => {
+    console.log(data.message)
   })
 
 
