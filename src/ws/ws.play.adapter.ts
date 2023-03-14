@@ -224,6 +224,13 @@ export class WsPlayAdapter implements OnGatewayConnection, OnGatewayDisconnect {
         }
       });
 
+      let gameInfoIdx = 0;
+      for (let i = 0; i < this.gameInfo.length; i++) {
+        if (this.gameInfo[i].roomNumber == data.roomNumber) {
+          gameInfoIdx = i;
+        }
+      }
+
       bool
         ? (this.server.sockets.in(data.roomNumber).emit('gameStart', '시작'),
           await this.db.startGame(Number(data.roomNumber)),
@@ -234,7 +241,13 @@ export class WsPlayAdapter implements OnGatewayConnection, OnGatewayDisconnect {
           await this.setGamePlayInfo({
             roomInfoIdx: roomInfoIdx,
             roomNumber: data.roomNumber,
-          }))
+          }),
+          this.server.sockets
+            .in(data.roomNumber)
+            .emit(
+              'userScoreBoard',
+              this.gameInfo[gameInfoIdx].userYahtScore[0],
+            ))
         : this.server.sockets.in(data.roomNumber).emit('gameStart', noneList);
     }
   }
@@ -307,7 +320,6 @@ export class WsPlayAdapter implements OnGatewayConnection, OnGatewayDisconnect {
         large_straight: null,
         chance: null,
         yahtzee: null,
-        yahtzee_bonus: null,
       });
     }
 
@@ -350,7 +362,12 @@ export class WsPlayAdapter implements OnGatewayConnection, OnGatewayDisconnect {
           state: 'throw',
           message: `${socket['userId']} 이(가) 주사위를 던짐`,
           diceResult: diceResult,
-          scoreBoard: await this.refreshScoreBoard({ diceResult: diceResult }),
+          scoreBoard: await this.refreshScoreBoard({
+            diceResult: diceResult,
+            userId: socket['userId'],
+            gameInfoIdx: gameInfoIdx,
+            roomNumber: data.roomNumber,
+          }),
         });
         this.gameInfo[gameInfoIdx].userDiceSet['throwDice'] = false;
       }
@@ -394,7 +411,12 @@ export class WsPlayAdapter implements OnGatewayConnection, OnGatewayDisconnect {
         state: 'throw',
         message: `${socket['userId']} 이(가) 선택한 주사위를 다시 던짐`,
         diceResult: diceResult,
-        scoreBoard: await this.refreshScoreBoard({ diceResult: diceResult }),
+        scoreBoard: await this.refreshScoreBoard({
+          diceResult: diceResult,
+          userId: socket['userId'],
+          gameInfoIdx: gameInfoIdx,
+          roomNumber: data.roomNumber,
+        }),
       });
       //await this.refreshScoreBoard({ diceResult: diceResult });
     } else {
@@ -429,11 +451,54 @@ export class WsPlayAdapter implements OnGatewayConnection, OnGatewayDisconnect {
       }
     }
 
+    // 다음사람 점수판 가져오기
+    let scoreBoard;
+    for (let i = 0; i < this.gameInfo[gameInfoIdx].userYahtScore.length; i++) {
+      if (
+        this.gameInfo[gameInfoIdx].userDiceTurn[1] ==
+        this.gameInfo[gameInfoIdx].userYahtScore[i]['userId']
+      ) {
+        scoreBoard = this.gameInfo[gameInfoIdx].userYahtScore[i];
+      }
+    }
+    console.log(data);
+    console.log(gameInfoIdx);
+    console.log(this.gameInfo[gameInfoIdx].userYahtScore.length);
+
     for (let i = 0; i < this.gameInfo[gameInfoIdx].userYahtScore.length; i++) {
       if (
         this.gameInfo[gameInfoIdx].userYahtScore[i]['userId'] ==
           socket['userId'] &&
-        !this.gameInfo[gameInfoIdx].userYahtScore[i][data.scoreType] &&
+        this.gameInfo[gameInfoIdx].userDiceTurn[0] == socket['userId'] &&
+        !this.gameInfo[gameInfoIdx].userDiceSet['throwDice']
+      ) {
+        if (
+          this.gameInfo[gameInfoIdx].userYahtScore[i][data.scoreType] === null
+        ) {
+          this.gameInfo[gameInfoIdx].userYahtScore[i][data.scoreType] = Number(
+            data.scoreValue,
+          );
+          this.gameInfo[gameInfoIdx].userDiceTurn.shift();
+          this.gameInfo[gameInfoIdx].userDiceTurn.push(socket['userId']);
+          this.gameInfo[gameInfoIdx].userDiceSet['throwDice'] = true;
+          console.log(this.gameInfo[gameInfoIdx].userYahtScore[i]);
+          this.server.sockets
+            .in(data.roomNumber)
+            .emit('userScoreBoard', scoreBoard);
+        } else {
+          console.log('이미 저장된 점수');
+        }
+      }
+    }
+
+    /*
+    for (let i = 0; i < this.gameInfo[gameInfoIdx].userYahtScore.length; i++) {
+      if (
+        this.gameInfo[gameInfoIdx].userYahtScore[i]['userId'] ==
+          socket['userId'] &&
+        !this.gameInfo[gameInfoIdx].userYahtScore[i][
+          data.scoreType.toString()
+        ] &&
         !this.gameInfo[gameInfoIdx].userDiceSet['throwDice'] &&
         this.gameInfo[gameInfoIdx].userDiceTurn[0] == socket['userId']
       ) {
@@ -443,50 +508,11 @@ export class WsPlayAdapter implements OnGatewayConnection, OnGatewayDisconnect {
         this.gameInfo[gameInfoIdx].userDiceTurn.shift();
         this.gameInfo[gameInfoIdx].userDiceTurn.push(socket['userId']);
         this.gameInfo[gameInfoIdx].userDiceSet['throwDice'] = true;
+
+        this.server.sockets
+          .in(data.roomNumber)
+          .emit('userScoreBoard', scoreBoard);
       }
-    }
-    /*
-    switch (data.scoreType) {
-      case 'ones':
-        console.log(gameInfoIdx);
-        for (
-          let i = 0;
-          i < this.gameInfo[gameInfoIdx].userYahtScore.length;
-          i++
-        ) {
-          if (
-            this.gameInfo[gameInfoIdx].userYahtScore[i]['userId'] ==
-            socket['userId']
-          ) {
-            this.gameInfo[gameInfoIdx].userYahtScore[i][data.scoreType] =
-              Number(data.scoreValue);
-          }
-        }
-        break;
-      case 'twos':
-        break;
-      case 'threes':
-        break;
-      case 'fours':
-        break;
-      case 'fives':
-        break;
-      case 'sixes':
-        break;
-      case 'triple':
-        break;
-      case 'four_card':
-        break;
-      case 'full_house':
-        break;
-      case 'small_straight':
-        break;
-      case 'large_straight':
-        break;
-      case 'chance':
-        break;
-      case 'yahtzee':
-        break;
     }
 
      */
@@ -546,7 +572,13 @@ export class WsPlayAdapter implements OnGatewayConnection, OnGatewayDisconnect {
   // 현재 주사위 점수 가져오기
   async refreshScoreBoard(data) {
     // console.log(data);
-    // const dice = data.diceResult;
+    // const dice = data.diceResult;\
+
+    // data {}
+    // diceResult: diceResult,
+    // userId: socket['userId'],
+    // gameInfoIdx: gameInfoIdx,
+    // roomNumber: data.roomNumber,
 
     const dice = [
       data.diceResult.firstDice,
@@ -669,7 +701,88 @@ export class WsPlayAdapter implements OnGatewayConnection, OnGatewayDisconnect {
     // 총 14개
     // console.log(scoreObject);
 
-    return scoreObject;
+    //----------------------------------------
+    // 유저 현재 점수 가져오기
+    let scoreBoard;
+    let picked = [];
+
+    for (
+      let i = 0;
+      i < this.gameInfo[data.gameInfoIdx].userYahtScore.length;
+      i++
+    ) {
+      if (
+        this.gameInfo[data.gameInfoIdx].userYahtScore[i]['userId'] ==
+        data.userId
+      ) {
+        scoreBoard = this.gameInfo[data.gameInfoIdx].userYahtScore[i];
+      }
+    }
+    console.log('--------------------------------------');
+    console.log(scoreBoard);
+
+    scoreObject.ones = scoreBoard.ones === null ? scoreObject.ones : scoreBoard.ones;
+    picked.push(scoreBoard.ones === null ? null : 'ones');
+
+    scoreObject.twos =
+      scoreBoard.twos === null ? scoreObject.twos : scoreBoard.twos;
+    picked.push(scoreBoard.twos === null ? null : 'twos');
+
+    scoreObject.threes =
+      scoreBoard.threes === null ? scoreObject.threes : scoreBoard.threes;
+    picked.push(scoreBoard.threes === null ? null : 'threes');
+
+    scoreObject.fours =
+      scoreBoard.fours === null ? scoreObject.fours : scoreBoard.fours;
+    picked.push(scoreBoard.fours === null ? null : 'fours');
+
+    scoreObject.fives =
+      scoreBoard.fives === null ? scoreObject.fives : scoreBoard.fives;
+    picked.push(scoreBoard.fives === null ? null : 'fives');
+
+    scoreObject.sixes =
+      scoreBoard.sixes === null ? scoreObject.sixes : scoreBoard.sixes;
+    picked.push(scoreBoard.sixes === null ? null : 'sixes');
+
+    scoreObject.triple =
+      scoreBoard.triple === null ? scoreObject.triple : scoreBoard.triple;
+    picked.push(scoreBoard.triple === null ? null : 'triple');
+
+    scoreObject.four_card =
+      scoreBoard.four_card === null
+        ? scoreObject.four_card
+        : scoreBoard.four_card;
+    picked.push(scoreBoard.four_card === null ? null : 'four_card');
+
+    scoreObject.full_house =
+      scoreBoard.full_house === null
+        ? scoreObject.full_house
+        : scoreBoard.full_house;
+    picked.push(scoreBoard.full_house === null ? null : 'full_house');
+
+    scoreObject.small_straight =
+      scoreBoard.small_straight === null
+        ? scoreObject.small_straight
+        : scoreBoard.small_straight;
+    picked.push(scoreBoard.small_straight === null ? null : 'small_straight');
+
+    scoreObject.large_straight =
+      scoreBoard.large_straight === null
+        ? scoreObject.large_straight
+        : scoreBoard.large_straight;
+    picked.push(scoreBoard.large_straight === null ? null : 'large_straight');
+
+    scoreObject.chance =
+      scoreBoard.chance === null ? scoreObject.chance : scoreBoard.chance;
+    picked.push(scoreBoard.chance === null ? null : 'chance');
+
+    scoreObject.yahtzee =
+      scoreBoard.yahtzee === null ? scoreObject.yahtzee : scoreBoard.yahtzee;
+    picked.push(scoreBoard.yahtzee === null ? null : 'yahtzee');
+
+    const pick = picked.filter((data) => data !== null);
+    console.log(pick);
+    return { scoreValue: scoreObject, picked: pick };
 
     //bonus = ones + twos + threes + fours + fives + sixes >= 63 ? 35 : 0;
   }
