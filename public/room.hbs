@@ -337,7 +337,7 @@
     scoreArr.push(data.fours);
     scoreArr.push(data.fives);
     scoreArr.push(data.sixes);
-    scoreArr.push(0)
+    scoreArr.push(data.bonus)
     scoreArr.push(data.triple);
     scoreArr.push(data.four_card);
     scoreArr.push(data.full_house);
@@ -411,7 +411,7 @@
     for(let i = 0;i<14;i++){
       for(let j = 0;j<data.length;j++){
         if(diceScoreTable.querySelector(`tr:nth-child(${i+1}) > td:nth-child(${1})`).innerText == data[j]){
-          diceScoreTable.querySelector(`tr:nth-child(${i+1}) > td:nth-child(${4})`).innerText = '선택됨';
+          diceScoreTable.querySelector(`tr:nth-child(${i+1}) > td:nth-child(${4})`).innerText = '입력됨';
         }
 
       }

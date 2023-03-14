@@ -486,7 +486,10 @@ export class WsPlayAdapter implements OnGatewayConnection, OnGatewayDisconnect {
             .in(data.roomNumber)
             .emit('userScoreBoard', scoreBoard);
         } else {
-          console.log('이미 저장된 점수');
+          console.log('이미 입력된 점수');
+          socket.emit('error', {
+            message: '이미 입력된 점수입니다.',
+          });
         }
       }
     }
@@ -514,7 +517,6 @@ export class WsPlayAdapter implements OnGatewayConnection, OnGatewayDisconnect {
           .emit('userScoreBoard', scoreBoard);
       }
     }
-
      */
   }
 
@@ -590,7 +592,8 @@ export class WsPlayAdapter implements OnGatewayConnection, OnGatewayDisconnect {
 
     //console.log(dice); //type Array
     //console.log(typeof dice[0]); // type Number
-    let triple = 0,
+    let bonus = 0,
+      triple = 0,
       four_card = 0,
       full_house = 0,
       small_straight = 0,
@@ -682,25 +685,6 @@ export class WsPlayAdapter implements OnGatewayConnection, OnGatewayDisconnect {
 
     // 라지 스트레이트
 
-    const scoreObject = {
-      ones: dice.filter((data) => 1 === data).length * 1,
-      twos: dice.filter((data) => 2 === data).length * 2,
-      threes: dice.filter((data) => 3 === data).length * 3,
-      fours: dice.filter((data) => 4 === data).length * 4,
-      fives: dice.filter((data) => 5 === data).length * 5,
-      sixes: dice.filter((data) => 6 === data).length * 6,
-
-      triple: triple,
-      four_card: four_card,
-      full_house: full_house,
-      small_straight: small_straight,
-      large_straight: large_straight,
-      chance: chance,
-      yahtzee: yahtzee,
-    };
-    // 총 14개
-    // console.log(scoreObject);
-
     //----------------------------------------
     // 유저 현재 점수 가져오기
     let scoreBoard;
@@ -719,9 +703,31 @@ export class WsPlayAdapter implements OnGatewayConnection, OnGatewayDisconnect {
       }
     }
     console.log('--------------------------------------');
+    // 보너스
+
     console.log(scoreBoard);
 
-    scoreObject.ones = scoreBoard.ones === null ? scoreObject.ones : scoreBoard.ones;
+    const scoreObject = {
+      ones: dice.filter((data) => 1 === data).length * 1,
+      twos: dice.filter((data) => 2 === data).length * 2,
+      threes: dice.filter((data) => 3 === data).length * 3,
+      fours: dice.filter((data) => 4 === data).length * 4,
+      fives: dice.filter((data) => 5 === data).length * 5,
+      sixes: dice.filter((data) => 6 === data).length * 6,
+      //bonus: bonus,
+      triple: triple,
+      four_card: four_card,
+      full_house: full_house,
+      small_straight: small_straight,
+      large_straight: large_straight,
+      chance: chance,
+      yahtzee: yahtzee,
+    };
+    // 총 14개
+    // console.log(scoreObject);
+
+    scoreObject.ones =
+      scoreBoard.ones === null ? scoreObject.ones : scoreBoard.ones;
     picked.push(scoreBoard.ones === null ? null : 'ones');
 
     scoreObject.twos =
@@ -782,6 +788,19 @@ export class WsPlayAdapter implements OnGatewayConnection, OnGatewayDisconnect {
 
     const pick = picked.filter((data) => data !== null);
     console.log(pick);
+
+    bonus =
+      scoreBoard.ones +
+        scoreBoard.twos +
+        scoreBoard.threes +
+        scoreBoard.fours +
+        scoreBoard.fives +
+        scoreBoard.sixes >=
+      63
+        ? 35
+        : 0;
+
+    scoreObject['bonus'] = bonus;
     return { scoreValue: scoreObject, picked: pick };
 
     //bonus = ones + twos + threes + fours + fives + sixes >= 63 ? 35 : 0;
