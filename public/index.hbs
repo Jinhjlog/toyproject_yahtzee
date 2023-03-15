@@ -33,6 +33,14 @@
   //const url = (window.location.href).replace('3000', '3131')
   //const socket = io(url);
   const socket = io("http://localhost:3131");
+
+
+  // 인스턴스
+  // let ip = document.location.href.replace('3000', '3131');
+  // const socket = io(`${ip}`);
+  // console.log(ip)
+
+
   const createRoom = document.getElementById('createRoom')
   const roomListDiv = document.getElementById("roomList");
   const setNameDiv = document.getElementById('setName')

@@ -157,6 +157,11 @@
   //const socket = io(url);
   const socket = io("http://localhost:3131");
 
+  // 인스턴스
+  // let ip = document.location.href.replace('3000', '3131');
+  // const socket = io(`http://3.34.138.148:3131/`);
+  // console.log(ip)
+
   const temp_id = Math.floor(Math.random() * 9999) + 1;
   const userName = 'test' + temp_id.toString();
 
