@@ -62,6 +62,7 @@ export class WsAdapter
       user_id: payload.user_id,
       room_name: payload.roomName,
       room_state: 'waiting',
+      room_max_user: payload.room_max_user,
     });
 
     createDB['role'] = 'host';

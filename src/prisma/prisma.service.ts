@@ -100,10 +100,10 @@ export class PrismaService extends PrismaClient implements OnModuleInit {
         room_name: true,
         room_state: true,
         room_user_count: true,
+        room_max_user: true,
       },
       where: {
         room_state: 'waiting',
-        room_user_count: { lte: 3 },
       },
     });
   }

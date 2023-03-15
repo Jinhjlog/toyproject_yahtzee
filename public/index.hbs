@@ -54,8 +54,9 @@
     const roomName = createRoom.querySelector('input').value
     await socket.emit('createRoom', {
       //createUser: 'Anon',
-      user_id: 4,
+      user_id: 4, // 로그인한 userId
       roomName: roomName,
+      room_max_user: undefined, // 참여자 제한
     })
   })
 
@@ -78,7 +79,7 @@
     for(let i = 0; i < data.length; i++){
       const li = document.createElement('li');
       const btn = document.createElement('button');
-      li.innerText = `${data[i].room_id} : ${data[i].room_name} || [${data[i].room_user_count} / 4]`;
+      li.innerText = `${data[i].room_id} : ${data[i].room_name} || [${data[i].room_user_count} / ${data[i].room_max_user}]`;
       btn.innerText = `${data[i].room_id} 방`;
       btn.value = data[i].room_id;
       btn.onclick = function() {

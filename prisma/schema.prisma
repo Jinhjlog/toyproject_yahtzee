@@ -23,6 +23,7 @@ model Room {
   room_name       String
   room_state      String
   room_user_count Int    @default(1)
+  room_max_user   Int    @default(4)
 }
 
 model Token {
