@@ -57,7 +57,7 @@
   })
 
   // 처음 진입 시 방목록 불러오기
-  socket.emit('roomListAll')
+  //socket.emit('roomListAll')
 
   // 서버로부터 방목록 가져오기
   socket.on('refreshRoom', (data)=>{
@@ -70,7 +70,7 @@
     for(let i = 0; i < data.length; i++){
       const li = document.createElement('li');
       const btn = document.createElement('button');
-      li.innerText = `${data[i].room_id} : ${data[i].room_name}`;
+      li.innerText = `${data[i].room_id} : ${data[i].room_name} || [${data[i].room_user_count} / 4]`;
       btn.innerText = `${data[i].room_id} 방`;
       btn.value = data[i].room_id;
       btn.onclick = function() {

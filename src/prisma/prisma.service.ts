@@ -99,9 +99,32 @@ export class PrismaService extends PrismaClient implements OnModuleInit {
         room_id: true,
         room_name: true,
         room_state: true,
+        room_user_count: true,
       },
       where: {
         room_state: 'waiting',
+      },
+    });
+  }
+
+  async userJoinRoom(roomId) {
+    return this.room.update({
+      where: {
+        room_id: roomId,
+      },
+      data: {
+        room_user_count: { increment: 1 },
+      },
+    });
+  }
+
+  async userQuitRoom(roomId) {
+    return this.room.update({
+      where: {
+        room_id: roomId,
+      },
+      data: {
+        room_user_count: { decrement: 1 },
       },
     });
   }

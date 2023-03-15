@@ -23,11 +23,13 @@ export class WsAdapter
     socket['nickName'] = 'anon';
   }
 
-  handleConnection(socket: Socket) {
+  async handleConnection(socket: Socket) {
     //console.log(this.server.sockets.adapter.rooms);
+    socket.emit('refreshRoom', await this.getRoomList());
   }
 
-  handleDisconnect(socket: Socket) {
+  async handleDisconnect(socket: Socket) {
+    // this.server.emit('refreshRoom', await this.getRoomList());
     //console.log(this.server.sockets.adapter.rooms);
   }
 

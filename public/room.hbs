@@ -303,6 +303,12 @@
     arr = [];
   }
 
+  // 주사위 순서
+  socket.on('diceTurn', (data) => {
+    console.log(data)
+  })
+
+
   socket.on('putDice', (data) => {
     if(data.state == 'throw') {
       console.log(data.message);

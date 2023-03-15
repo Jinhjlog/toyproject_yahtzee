@@ -99,9 +99,11 @@ export class WsPlayAdapter implements OnGatewayConnection, OnGatewayDisconnect {
           }
         }
       } catch (e) {}
-
+      console.log(userRoomNumber);
       try {
+        await this.db.userQuitRoom(Number(userRoomNumber));
         const roomInfoIdx = this.getMyRoomIdx(userRoomNumber);
+        this.server.emit('refreshRoom', await this.db.getRoomList());
         //console.log(roomInfoIdx);
 
         socket
@@ -158,6 +160,9 @@ export class WsPlayAdapter implements OnGatewayConnection, OnGatewayDisconnect {
   @SubscribeMessage('setPlayInfo')
   async savePlayInfo(socket: Socket, data) {
     let index;
+
+    await this.db.userJoinRoom(Number(data.roomNumber));
+    this.server.emit('refreshRoom', await this.db.getRoomList());
 
     socket['userId'] = data.userId;
     socket['userRole'] = data.userRole;
@@ -334,6 +339,11 @@ export class WsPlayAdapter implements OnGatewayConnection, OnGatewayDisconnect {
         diceCount: 2,
       },
     });
+
+    this.server.in(data.roomNumber).emit('diceTurn', {
+      message: 'diceTurn',
+      diceTurn: this.roomInfo[data.roomInfoIdx].userList[0],
+    });
   }
 
   @SubscribeMessage('throwDice')
@@ -498,6 +508,10 @@ export class WsPlayAdapter implements OnGatewayConnection, OnGatewayDisconnect {
           this.server.sockets
             .in(data.roomNumber)
             .emit('userScoreInfo', this.gameInfo[gameInfoIdx].userPlayInfo);
+          this.server.in(data.roomNumber).emit('diceTurn', {
+            message: 'diceTurn',
+            diceTurn: this.gameInfo[gameInfoIdx].userDiceTurn[0],
+          });
           if (
             this.gameInfo[gameInfoIdx].gameRound ==
             this.gameInfo[gameInfoIdx].userDiceTurn.length * 3 // 게임 라운드
@@ -511,8 +525,6 @@ export class WsPlayAdapter implements OnGatewayConnection, OnGatewayDisconnect {
             this.server.sockets
               .in(data.roomNumber)
               .emit('gameEnd', result.reverse());
-
-
           }
         } else {
           console.log('이미 입력된 점수');
