@@ -161,6 +161,12 @@ export class WsPlayAdapter implements OnGatewayConnection, OnGatewayDisconnect {
   async savePlayInfo(socket: Socket, data) {
     let index;
 
+    console.log(this.server.sockets.adapter.rooms.get(data.roomNumber).size)
+    if(this.server.sockets.adapter.rooms.get(data.roomNumber).size >= 5) {
+      socket.emit('joinError');
+      return false;
+    }
+    console.log('?>?')
     await this.db.userJoinRoom(Number(data.roomNumber));
     this.server.emit('refreshRoom', await this.db.getRoomList());
 
