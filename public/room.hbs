@@ -190,20 +190,22 @@
   if(searchParam('role') == 'host') {
     socket.emit('hostCreateRoom', {
       userId: temp_id,
-      userRole : 'host',
       userName: userName,
       roomNumber: searchParam('roomNumber')
     })
   }else {
     socket.emit('joinRoom', {
-      roomNumber: searchParam('roomNumber')
+      userId: temp_id,
+      roomNumber: searchParam('roomNumber'),
+      userName: userName //
     })
+    /*
     socket.emit('setPlayInfo', {
       userId: temp_id,
       userRole : 'user',
       roomNumber: searchParam('roomNumber'),
       userName: userName //
-    })
+    })*/
   }
 
 
@@ -235,15 +237,11 @@
   })
 
   startBtn.addEventListener('click', () => {
-    socket.emit('hostGameStart', {
-      roomNumber: searchParam('roomNumber'),
-    })
+    socket.emit('hostGameStart')
   })
 
   readyBtn.addEventListener('click', () => {
-    socket.emit('setUserReady', {
-      roomNumber: searchParam('roomNumber'),
-    })
+    socket.emit('setUserReady')
   })
 
   socket.on('gameStart', (data) => {
@@ -252,9 +250,7 @@
       let diceBtn = document.createElement("button");
       diceBtn.innerText = '주사위 던지기';
       diceBtn.onclick = function() {
-        socket.emit('throwDice', {
-          roomNumber: searchParam('roomNumber'),
-        })
+        socket.emit('throwDice')
       }
       gameSetDiv.innerText = '';
       gameSetDiv.appendChild(diceBtn);
@@ -300,7 +296,6 @@
     }
     console.log('putIndex', arr);
     socket.emit('putDice', {
-      roomNumber: searchParam('roomNumber'),
       diceResult: diceResult,
       diceIndex: arr,
     })
@@ -375,7 +370,6 @@
       console.log(scoreType);
 
       socket.emit('saveScore', {
-        roomNumber: searchParam('roomNumber'),
         scoreType: scoreType,
         scoreValue: scoreVal,
       })
@@ -388,7 +382,6 @@
       console.log(scoreVal);
       console.log(scoreType)
       socket.emit('saveScore', {
-        roomNumber: searchParam('roomNumber'),
         scoreType: scoreType,
         scoreValue: scoreVal,
       })

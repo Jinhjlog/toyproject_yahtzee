@@ -35,20 +35,22 @@ export class WsAdapter
 
   constructor(private db: PrismaService) {}
 
-  @SubscribeMessage('setName')
-  async setName(socket: Socket, name) {
-    socket['nickName'] = name;
-    console.log(socket['nickName']);
-  }
+  // @SubscribeMessage('setName')
+  // async setName(socket: Socket, name) {
+  //   socket['nickName'] = name;
+  //   console.log(socket['nickName']);
+  // }
 
   @SubscribeMessage('createRoom')
   async createRoom(socket: Socket, payload) {
     const db_data = await this.db.getRoomHostId();
     //console.log(payload);
-    let bool = true;
+    // let bool = true;
     await db_data.forEach((list) => {
       if (list.user_id.toString() === payload.user_id.toString()) {
-        bool = false;
+        socket.emit('error', '방 2개 이상 생성 불가');
+        return false;
+        // bool = false;
       }
     });
 
@@ -92,7 +94,7 @@ export class WsAdapter
   async roomList(socket: Socket) {
     socket.emit('refreshRoom', await this.getRoomList());
   }
-
+  //
   // db에서 방 목록 가져오기
   async getRoomList() {
     return this.db.getRoomList();
