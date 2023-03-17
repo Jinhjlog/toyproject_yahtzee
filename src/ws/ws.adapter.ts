@@ -10,19 +10,12 @@ import {
 import { Socket, Server } from 'socket.io';
 import { PrismaService } from '../prisma/prisma.service';
 
-
 @WebSocketGateway(3131, {
   cors: { origin: '*' },
 })
-export class WsAdapter
-  implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect
-{
+export class WsAdapter implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
   server: Server;
-
-  afterInit(socket: Socket) {
-    socket['nickName'] = 'anon';
-  }
 
   async handleConnection(socket: Socket) {
     //console.log(this.server.sockets.adapter.rooms);

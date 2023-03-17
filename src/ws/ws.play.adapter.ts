@@ -311,45 +311,45 @@ export class WsPlayAdapter implements OnGatewayConnection, OnGatewayDisconnect {
   /*
    * user 준비 버튼 클릭
    * */
-  @SubscribeMessage('setUserReady')
-  async setUserReady(socket: Socket) {
-    //const roomInfoIdx = this.getMyRoomIdx(data.roomNumber);
-    const roomNumIdx = await this.findUserRoom(socket['userId']);
-
-    /*
-     * 유저 준비 상태에 따른 준비, 준비 취소
-     * */
-    this.roomInfo[roomNumIdx.roomInfoIdx].userInfo[roomNumIdx.userInfoIdx][
-      'userState'
-    ] == 'none'
-      ? (this.roomInfo[roomNumIdx.roomInfoIdx].userInfo[roomNumIdx.userInfoIdx][
-          'userState'
-        ] = 'ready')
-      : (this.roomInfo[roomNumIdx.roomInfoIdx].userInfo[roomNumIdx.userInfoIdx][
-          'userState'
-        ] = 'none');
-
-    /*
-     * room에 참여중인 user 업데이트
-     * */
-    this.server.sockets
-      .in(roomNumIdx.roomNumber.toString())
-      .emit('refreshUserList', this.roomInfo[roomNumIdx.roomInfoIdx]);
-
-    /*
-    for (let i = 0; i < this.roomInfo[roomInfoIdx].userInfo.length; i++) {
-      if (
-        this.roomInfo[roomInfoIdx].userInfo[i]['userId'] == socket['userId']
-      ) {
-        this.roomInfo[roomInfoIdx].userInfo[i]['userState'] == 'none'
-          ? (this.roomInfo[roomInfoIdx].userInfo[i]['userState'] = 'ready')
-          : (this.roomInfo[roomInfoIdx].userInfo[i]['userState'] = 'none');
-        this.server.sockets
-          .in(data.roomNumber)
-          .emit('refreshUserList', this.roomInfo[roomInfoIdx]);
-      }
-    }*/
-  }
+  // @SubscribeMessage('setUserReady')
+  // async setUserReady(socket: Socket) {
+  //   //const roomInfoIdx = this.getMyRoomIdx(data.roomNumber);
+  //   const roomNumIdx = await this.findUserRoom(socket['userId']);
+  //
+  //   /*
+  //    * 유저 준비 상태에 따른 준비, 준비 취소
+  //    * */
+  //   this.roomInfo[roomNumIdx.roomInfoIdx].userInfo[roomNumIdx.userInfoIdx][
+  //     'userState'
+  //   ] == 'none'
+  //     ? (this.roomInfo[roomNumIdx.roomInfoIdx].userInfo[roomNumIdx.userInfoIdx][
+  //         'userState'
+  //       ] = 'ready')
+  //     : (this.roomInfo[roomNumIdx.roomInfoIdx].userInfo[roomNumIdx.userInfoIdx][
+  //         'userState'
+  //       ] = 'none');
+  //
+  //   /*
+  //    * room에 참여중인 user 업데이트
+  //    * */
+  //   this.server.sockets
+  //     .in(roomNumIdx.roomNumber.toString())
+  //     .emit('refreshUserList', this.roomInfo[roomNumIdx.roomInfoIdx]);
+  //
+  //   /*
+  //   for (let i = 0; i < this.roomInfo[roomInfoIdx].userInfo.length; i++) {
+  //     if (
+  //       this.roomInfo[roomInfoIdx].userInfo[i]['userId'] == socket['userId']
+  //     ) {
+  //       this.roomInfo[roomInfoIdx].userInfo[i]['userState'] == 'none'
+  //         ? (this.roomInfo[roomInfoIdx].userInfo[i]['userState'] = 'ready')
+  //         : (this.roomInfo[roomInfoIdx].userInfo[i]['userState'] = 'none');
+  //       this.server.sockets
+  //         .in(data.roomNumber)
+  //         .emit('refreshUserList', this.roomInfo[roomInfoIdx]);
+  //     }
+  //   }*/
+  // }
 
   /*
    * host 게임 시작 버튼 클릭 시
