@@ -54,6 +54,9 @@ export class WsAdapter implements OnGatewayConnection, OnGatewayDisconnect {
       throw new UnauthorizedException('roomError');
     }*/
 
+    if (payload.room_max_user < 2 || payload.room_max_user > 4) {
+      payload.room_max_user = 4;
+    }
     const createDB = await this.db.createRoom({
       user_id: payload.user_id,
       room_name: payload.roomName,
