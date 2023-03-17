@@ -211,7 +211,6 @@
 
   socket.on('userJoinRoom', (data) => {
     console.log(data);
-
   })
 
   socket.on('refreshUserList', (data) => {
@@ -246,7 +245,7 @@
 
   socket.on('gameStart', (data) => {
     console.log(data);
-    if(data == '시작') {
+    if(data.state == 1) {
       let diceBtn = document.createElement("button");
       diceBtn.innerText = '주사위 던지기';
       diceBtn.onclick = function() {
@@ -254,12 +253,22 @@
       }
       gameSetDiv.innerText = '';
       gameSetDiv.appendChild(diceBtn);
+    }else {
+      console.log(data.message)
     }
   })
 
+  // 주사위 순서
+  socket.on('diceTurn', (data) => {
+    console.log(data)
+  })
+
+
   // 던진 주사위 서버로부터 데이터 받기
   socket.on('throwDice', (data) => {
-    if(data.state == 'error'){
+    console.log(data);
+
+    if(data.state == 0){
       console.log(data.message);
     }else {
       console.log(data.message);
@@ -303,18 +312,15 @@
     arr = [];
   }
 
-  // 주사위 순서
-  socket.on('diceTurn', (data) => {
-    console.log(data)
-  })
+
 
 
   socket.on('putDice', (data) => {
-    if(data.state == 'throw') {
+    console.log(data)
+    if(data.state == 1) {
       console.log(data.message);
-      console.log(data.diceResult);
+      // console.log(data.diceResult);
       diceResult = data.diceResult;
-      console.log(data);
       refreshDiceView(data)
       refreshScoreBoard(data.scoreBoard.scoreValue)
       pickedScore(data.scoreBoard.picked)
@@ -400,6 +406,7 @@
 
   socket.on('userScoreBoard', (data) => {
     refreshScoreBoard(data)
+    console.log(data);
     for(let i = 0;i< 6; i++){
       diceScoreTable.querySelector(`tr:nth-child(${i+1}) > td:nth-child(${4})`).innerText = '';
     }
@@ -430,7 +437,7 @@
   socket.on('userScoreInfo', (data) => {
     const userScoreBoardUl = userScoreBoard.querySelector('ul')
     userScoreBoardUl.innerHTML = '';
-    console.log(typeof data);
+    console.log(data);
     for(let i = 0;i<data.length;i++){
       const li = document.createElement('li');
       li.innerText = `${data[i].userName} : ${data[i].userScore}`
@@ -452,7 +459,6 @@
 
 
   socket.on('joinError', () => {
-
     location.href = '/'
     alert('참여할 수 없음')
   })

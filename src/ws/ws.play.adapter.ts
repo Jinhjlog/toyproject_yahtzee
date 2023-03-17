@@ -171,12 +171,9 @@ export class WsPlayAdapter implements OnGatewayConnection, OnGatewayDisconnect {
         this.server.emit('refreshRoom', await this.db.getRoomList());
         //console.log(roomInfoIdx);
 
-        socket
-          .to(roomNumIdx.roomNumber.toString())
-          .emit(
-            'disconnectUser',
-            `${socket['userName']}이(가) 퇴장하셨습니다.`,
-          );
+        socket.to(roomNumIdx.roomNumber.toString()).emit('disconnectUser', {
+          message: `${socket['userName']}이(가) 퇴장하셨습니다.`,
+        });
         socket
           .to(this.roomInfo[roomNumIdx.roomInfoIdx].roomNumber.toString())
           .emit('refreshUserList', this.roomInfo[roomNumIdx.roomInfoIdx]);
@@ -389,7 +386,7 @@ export class WsPlayAdapter implements OnGatewayConnection, OnGatewayDisconnect {
       bool
         ? (this.server.sockets
             .in(roomNumIdx.roomNumber.toString())
-            .emit('gameStart', '시작'),
+            .emit('gameStart', { message: '게임 시작', state: 1 }),
           await this.db.startGame(Number(roomNumIdx.roomNumber)),
           this.server.sockets.emit(
             'refreshRoom',
@@ -407,7 +404,11 @@ export class WsPlayAdapter implements OnGatewayConnection, OnGatewayDisconnect {
             ))
         : this.server.sockets
             .in(roomNumIdx.roomNumber.toString())
-            .emit('gameStart', noneList);
+            .emit('gameStart', {
+              message: '게임 시작 실패',
+              state: 0,
+              noneList: noneList,
+            });
     }
   }
 
@@ -552,7 +553,7 @@ export class WsPlayAdapter implements OnGatewayConnection, OnGatewayDisconnect {
     ) {
       if (!this.gameInfo[gameInfoIdx.gameInfoIdx].userDiceSet['throwDice']) {
         socket.emit('throwDice', {
-          state: 'error',
+          state: 0,
           message: `주사위는 한번 만 던질 수 있음`,
         });
       } else {
@@ -560,7 +561,7 @@ export class WsPlayAdapter implements OnGatewayConnection, OnGatewayDisconnect {
         this.server.sockets
           .in(roomNumIdx.roomNumber.toString())
           .emit('throwDice', {
-            state: 'throw',
+            state: 1,
             message: `${socket['userId']} 이(가) 주사위를 던짐`,
             diceResult: diceResult,
             scoreBoard: await this.refreshScoreBoard({
@@ -578,7 +579,7 @@ export class WsPlayAdapter implements OnGatewayConnection, OnGatewayDisconnect {
       // this.gameInfo[gameInfoIdx].userDiceTurn.push(socket['userId']);
     } else {
       socket.emit('throwDice', {
-        state: 'error',
+        state: 0,
         message: `${
           this.gameInfo[gameInfoIdx.gameInfoIdx].userDiceTurn[0]
         }의 턴`,
@@ -620,7 +621,7 @@ export class WsPlayAdapter implements OnGatewayConnection, OnGatewayDisconnect {
       this.gameInfo[gameInfoIdx.gameInfoIdx].userDiceSet['diceCount'] -= 1;
       // console.log('result', diceResult);
       this.server.sockets.in(roomNumIdx.roomNumber.toString()).emit('putDice', {
-        state: 'throw',
+        state: 1,
         message: `${socket['userId']} 이(가) 선택한 주사위를 다시 던짐`,
         diceResult: diceResult,
         scoreBoard: await this.refreshScoreBoard({
@@ -640,18 +641,18 @@ export class WsPlayAdapter implements OnGatewayConnection, OnGatewayDisconnect {
           this.gameInfo[gameInfoIdx.gameInfoIdx].userDiceSet['diceCount'] <= 0
         ) {
           socket.emit('putDice', {
-            state: 'error',
+            state: 0,
             message: '남은 주사위가 없음',
           });
         } else {
           socket.emit('putDice', {
-            state: 'error',
+            state: 0,
             message: '주사위가 선택되지 않음',
           });
         }
       } else {
         socket.emit('putDice', {
-          state: 'error',
+          state: 0,
           message: `${
             this.gameInfo[gameInfoIdx.gameInfoIdx].userDiceTurn[0]
           }의 턴`,
@@ -888,7 +889,7 @@ export class WsPlayAdapter implements OnGatewayConnection, OnGatewayDisconnect {
       result[data[i]] = Math.floor(Math.random() * 6) + 1;
     }
     console.log(typeof result);*/
-    console.log(result);
+    console.log(typeof result);
     return result;
   }
 
@@ -1009,7 +1010,7 @@ export class WsPlayAdapter implements OnGatewayConnection, OnGatewayDisconnect {
     //----------------------------------------
     // 유저 현재 점수 가져오기
     let scoreBoard;
-    let picked = [];
+    const picked = [];
 
     for (
       let i = 0;
