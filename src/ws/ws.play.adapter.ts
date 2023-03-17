@@ -354,7 +354,7 @@ export class WsPlayAdapter implements OnGatewayConnection, OnGatewayDisconnect {
   /*
    * host 게임 시작 버튼 클릭 시
    * */
-  @SubscribeMessage('hostGameStart')
+  @SubscribeMessage('gameReadyBtn')
   async hostGameStart(socket: Socket) {
     //const roomInfoIdx = this.getMyRoomIdx(data.roomNumber);
     const roomNumIdx = await this.findUserRoom(socket['userId']);
@@ -363,53 +363,125 @@ export class WsPlayAdapter implements OnGatewayConnection, OnGatewayDisconnect {
       userId: socket['userId'],
     });
 
-    if (
-      socket['userRole'] == 'host' &&
-      this.roomInfo[roomNumIdx.roomInfoIdx].userInfo.length >= 2
-    ) {
-      const noneList = [];
-      let bool = true;
-      this.roomInfo[roomNumIdx.roomInfoIdx].userInfo.forEach((list) => {
-        if (list['userState'] != 'ready') {
-          noneList.push(list['userName']);
-          bool = false;
-        }
-      });
+    switch (socket['userRole']) {
+      case 'host':
+        if (this.roomInfo[roomNumIdx.roomInfoIdx].userInfo.length >= 2) {
+          const noneList = [];
+          let bool = true;
+          this.roomInfo[roomNumIdx.roomInfoIdx].userInfo.forEach((list) => {
+            if (list['userState'] != 'ready') {
+              noneList.push(list['userName']);
+              bool = false;
+            }
+          });
 
-      /*let gameInfoIdx = 0;
-      for (let i = 0; i < this.gameInfo.length; i++) {
-        if (this.gameInfo[i].roomNumber == data.roomNumber) {
-          gameInfoIdx = i;
-        }
-      }*/
+          /*let gameInfoIdx = 0;
+          for (let i = 0; i < this.gameInfo.length; i++) {
+            if (this.gameInfo[i].roomNumber == data.roomNumber) {
+              gameInfoIdx = i;
+            }
+          }*/
 
-      bool
-        ? (this.server.sockets
-            .in(roomNumIdx.roomNumber.toString())
-            .emit('gameStart', { message: '게임 시작', state: 1 }),
-          await this.db.startGame(Number(roomNumIdx.roomNumber)),
-          this.server.sockets.emit(
-            'refreshRoom',
-            await this.adapter.getRoomList(),
-          ),
-          await this.setGamePlayInfo({
-            roomInfoIdx: roomNumIdx.roomInfoIdx,
-            roomNumber: roomNumIdx.roomNumber,
-          }),
-          this.server.sockets
-            .in(roomNumIdx.roomNumber.toString())
-            .emit(
-              'userScoreBoard',
-              this.gameInfo[gameInfoIdx.gameInfoIdx].userYahtScore[0],
-            ))
-        : this.server.sockets
-            .in(roomNumIdx.roomNumber.toString())
-            .emit('gameStart', {
-              message: '게임 시작 실패',
-              state: 0,
-              noneList: noneList,
-            });
+          bool
+            ? (this.server.sockets
+                .in(roomNumIdx.roomNumber.toString())
+                .emit('gameStart', { message: '게임 시작', state: 1 }),
+              await this.db.startGame(Number(roomNumIdx.roomNumber)),
+              this.server.sockets.emit(
+                'refreshRoom',
+                await this.adapter.getRoomList(),
+              ),
+              await this.setGamePlayInfo({
+                roomInfoIdx: roomNumIdx.roomInfoIdx,
+                roomNumber: roomNumIdx.roomNumber,
+              }),
+              this.server.sockets
+                .in(roomNumIdx.roomNumber.toString())
+                .emit(
+                  'userScoreBoard',
+                  this.gameInfo[gameInfoIdx.gameInfoIdx].userYahtScore[0],
+                ))
+            : this.server.sockets
+                .in(roomNumIdx.roomNumber.toString())
+                .emit('gameStart', {
+                  message: '게임 시작 실패',
+                  state: 0,
+                  noneList: noneList,
+                });
+        }
+        break;
+      case 'user':
+        /*
+         * 유저 준비 상태에 따른 준비, 준비 취소
+         * */
+        this.roomInfo[roomNumIdx.roomInfoIdx].userInfo[roomNumIdx.userInfoIdx][
+          'userState'
+        ] == 'none'
+          ? (this.roomInfo[roomNumIdx.roomInfoIdx].userInfo[
+              roomNumIdx.userInfoIdx
+            ]['userState'] = 'ready')
+          : (this.roomInfo[roomNumIdx.roomInfoIdx].userInfo[
+              roomNumIdx.userInfoIdx
+            ]['userState'] = 'none');
+
+        /*
+         * room에 참여중인 user 업데이트
+         * */
+        this.server.sockets
+          .in(roomNumIdx.roomNumber.toString())
+          .emit('refreshUserList', this.roomInfo[roomNumIdx.roomInfoIdx]);
+        break;
+      default:
+        return false;
     }
+
+    // if (
+    //   socket['userRole'] == 'host' &&
+    //   this.roomInfo[roomNumIdx.roomInfoIdx].userInfo.length >= 2
+    // ) {
+    //   const noneList = [];
+    //   let bool = true;
+    //   this.roomInfo[roomNumIdx.roomInfoIdx].userInfo.forEach((list) => {
+    //     if (list['userState'] != 'ready') {
+    //       noneList.push(list['userName']);
+    //       bool = false;
+    //     }
+    //   });
+    //
+    //   /*let gameInfoIdx = 0;
+    //   for (let i = 0; i < this.gameInfo.length; i++) {
+    //     if (this.gameInfo[i].roomNumber == data.roomNumber) {
+    //       gameInfoIdx = i;
+    //     }
+    //   }*/
+    //
+    //   bool
+    //     ? (this.server.sockets
+    //         .in(roomNumIdx.roomNumber.toString())
+    //         .emit('gameStart', { message: '게임 시작', state: 1 }),
+    //       await this.db.startGame(Number(roomNumIdx.roomNumber)),
+    //       this.server.sockets.emit(
+    //         'refreshRoom',
+    //         await this.adapter.getRoomList(),
+    //       ),
+    //       await this.setGamePlayInfo({
+    //         roomInfoIdx: roomNumIdx.roomInfoIdx,
+    //         roomNumber: roomNumIdx.roomNumber,
+    //       }),
+    //       this.server.sockets
+    //         .in(roomNumIdx.roomNumber.toString())
+    //         .emit(
+    //           'userScoreBoard',
+    //           this.gameInfo[gameInfoIdx.gameInfoIdx].userYahtScore[0],
+    //         ))
+    //     : this.server.sockets
+    //         .in(roomNumIdx.roomNumber.toString())
+    //         .emit('gameStart', {
+    //           message: '게임 시작 실패',
+    //           state: 0,
+    //           noneList: noneList,
+    //         });
+    // }
   }
 
   @SubscribeMessage('serverConsoleView')
