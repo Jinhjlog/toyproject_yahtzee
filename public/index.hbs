@@ -32,14 +32,24 @@
 <script>
   //const url = (window.location.href).replace('3000', '3131')
   //const socket = io(url);
-  const socket = io("http://localhost:3131");
+
+  this.socketOptions = {
+    transportOptions: {
+      polling: {
+        extraHeaders: {
+          Authorization: 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjo0LCJ1c2VyX2VtYWlsIjoiZW1haWw2IiwidXNlcl9uYW1lIjoibmFtZSIsImlhdCI6MTY3OTAyOTA0NywiZXhwIjoxNjc5MDM5ODQ3fQ.DwQLzoRrNohe6kY1ZvbiNdRCB--HwzbyKr6XGFNic_c'
+        }
+      }
+    }
+  }
+
+  const socket = io("http://localhost:3131/", this.socketOptions);
 
 
   // 인스턴스
   // let ip = document.location.href.replace('3000', '3131');
   // const socket = io(`${ip}`);
   // console.log(ip)
-
 
   const createRoom = document.getElementById('createRoom')
   const roomListDiv = document.getElementById("roomList");
@@ -52,7 +62,7 @@
 
   createRoom.querySelector('button').addEventListener('click', async () => {
     const roomName = createRoom.querySelector('input').value
-    await socket.emit('createRoom', {
+    await socket.emit('createRoom',{
       //createUser: 'Anon',
       user_id: 4, // 로그인한 userId
       roomName: roomName,

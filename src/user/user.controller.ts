@@ -1,19 +1,30 @@
-import { Body, Request, Controller, Get, Post, UseGuards, Put, Delete } from "@nestjs/common";
+import {
+  Body,
+  Request,
+  Controller,
+  Get,
+  Post,
+  UseGuards,
+  Put,
+  Delete,
+} from '@nestjs/common';
 import { UserService } from './user.service';
-import { JwtAuthGuardRefresh } from "../auth/refresh/jwt.auth.guard.refresh";
-import { JwtAuthGuardUser } from "../auth/access/jwt.auth.guard.user";
+import { JwtAuthGuardRefresh } from '../auth/refresh/jwt.auth.guard.refresh';
+import { JwtAuthGuardUser } from '../auth/access/jwt.auth.guard.user';
+import { SignInUserDto } from './dto/sign-In.user.dto';
+import { SignUpUserDto } from './dto/sign-up.user.dto';
 
 @Controller('api')
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
   @Post('/signUp')
-  signUp(@Body() data) {
+  signUp(@Body() data: SignUpUserDto) {
     return this.userService.signUp(data);
   }
 
   @Post('/signIn')
-  signIn(@Body() data) {
+  signIn(@Body() data: SignInUserDto) {
     return this.userService.signIn(data);
   }
 
@@ -31,9 +42,6 @@ export class UserController {
 
   @Get('/test')
   test(@Body() data) {
-    return this.userService.test(data)
-
+    return this.userService.test(data);
   }
-
-
 }
