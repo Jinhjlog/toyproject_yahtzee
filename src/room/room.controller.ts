@@ -5,8 +5,8 @@ import { RoomService } from './room.service';
 export class RoomController {
   constructor(private readonly roomService: RoomService) {}
 
-  @Get('/roomHostId')
-  getRoomHostId(@Body() data) {
-    return this.roomService.getRoomHostId(data);
-  }
+  // @Get('/roomHostId')
+  // getRoomHostId(@Body() data) {
+  //   return this.roomService.getRoomHostId(data);
+  // }
 }

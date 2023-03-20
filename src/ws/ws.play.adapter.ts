@@ -12,6 +12,9 @@ import { Inject } from '@nestjs/common';
 import { WsAdapter } from './ws.adapter';
 import { GamePlayWsEntity } from './entities/game-play-ws.entity';
 import { JwtService } from '@nestjs/jwt';
+import { CreateRoomWsPlayDto } from "./dto/create-room.ws.play.dto";
+import { PutDiceWsPlayDto } from "./dto/put-dice.ws.play.dto";
+import { SaveScoreWsPlayDto } from "./dto/save-score.ws.play.dto";
 
 @WebSocketGateway(3131, {
   cors: { origin: '*' },
@@ -139,7 +142,7 @@ export class WsPlayAdapter implements OnGatewayConnection, OnGatewayDisconnect {
 
   // 방 생성
   @SubscribeMessage('hostCreateRoom')
-  async hostCreateRoom(socket: Socket, data) {
+  async hostCreateRoom(socket: Socket, data: CreateRoomWsPlayDto) {
     /*
      * 유저의 소켓에 userId, userRole, userName을 저장함
      * */
@@ -150,7 +153,7 @@ export class WsPlayAdapter implements OnGatewayConnection, OnGatewayDisconnect {
     /*
      * 방번호에 해당하는 room에 join함
      * */
-    socket.join(data.roomNumber);
+    socket.join(data.roomNumber.toString());
 
     /*
      * 방 목록 새로고침
@@ -180,8 +183,8 @@ export class WsPlayAdapter implements OnGatewayConnection, OnGatewayDisconnect {
 
   // user 방 입장
   @SubscribeMessage('joinRoom')
-  async joinRoom(socket: Socket, data) {
-    socket.join(data.roomNumber);
+  async joinRoom(socket: Socket, data: CreateRoomWsPlayDto) {
+    socket.join(data.roomNumber.toString());
     await this.savePlayInfo(socket, data);
   }
 
@@ -462,7 +465,7 @@ export class WsPlayAdapter implements OnGatewayConnection, OnGatewayDisconnect {
    * 선택한 주사위 다시 던지기
    * */
   @SubscribeMessage('putDice')
-  async putDice(socket: Socket, data) {
+  async putDice(socket: Socket, data: PutDiceWsPlayDto) {
     const roomNumIdx = await this.findUserRoom(socket['userId']);
     const gameInfoIdx = await this.findGameInfoIdx({
       roomNumber: roomNumIdx.roomNumber,
@@ -528,7 +531,7 @@ export class WsPlayAdapter implements OnGatewayConnection, OnGatewayDisconnect {
    * 사용자가 점수를 선택할 때
    * */
   @SubscribeMessage('saveScore')
-  async endTurn(socket: Socket, data) {
+  async endTurn(socket: Socket, data: SaveScoreWsPlayDto) {
     const roomNumIdx = await this.findUserRoom(socket['userId']);
     const gameInfoIdx = await this.findGameInfoIdx({
       roomNumber: roomNumIdx.roomNumber,
@@ -948,7 +951,4 @@ export class WsPlayAdapter implements OnGatewayConnection, OnGatewayDisconnect {
     }
     return { gameInfoIdx: gameInfoIdx, userPlayInfoIdx: userPlayInfoIdx };
   }
-
-
-
 }

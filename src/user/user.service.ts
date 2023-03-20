@@ -19,10 +19,10 @@ export class UserService {
     }
     data.user_pw = await this.hashPassword(data.user_pw);
 
-    await this.db.signUp(data);
     /*
      * 데이터베이스 코드
      * */
+    await this.db.signUp(data);
 
     return '계정 생성';
   }

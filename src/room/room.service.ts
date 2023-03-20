@@ -9,8 +9,8 @@ export class RoomService {
   @Inject()
   private jwtService: JwtService;
 
-  async getRoomHostId(data) {
-    const db_data = await this.db.getRoomHostId();
-    return db_data;
-  }
+  // async getRoomHostId(data) {
+  //   const db_data = await this.db.getRoomHostId();
+  //   return db_data;
+  // }
 }

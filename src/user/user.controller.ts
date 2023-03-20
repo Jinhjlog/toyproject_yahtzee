@@ -30,7 +30,7 @@ export class UserController {
 
   @UseGuards(JwtAuthGuardRefresh)
   @Put('/refreshToken')
-  refreshToken(@Body() data, @Request() req) {
+  refreshToken(@Request() req) {
     return this.userService.updateToken(req.headers);
   }
 

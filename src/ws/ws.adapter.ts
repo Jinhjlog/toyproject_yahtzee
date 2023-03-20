@@ -42,7 +42,7 @@ export class WsAdapter implements OnGatewayConnection, OnGatewayDisconnect {
 
   @SubscribeMessage('createRoom')
   async createRoom(socket: Socket, payload) {
-    // 토큰 검증
+    // socket 토큰 검증
     // try {
     //   const tokenVerify = await this.socketAuth(socket);
     //   if (tokenVerify === null) {
@@ -64,11 +64,13 @@ export class WsAdapter implements OnGatewayConnection, OnGatewayDisconnect {
       }
     });
 
-    /*// 방 중복생성 예외처리 나중에 주석 해제
+    // 방 중복생성 예외처리 나중에 주석 해제
+    /*
     if (!bool) {
       socket.emit('error', '방 2개 이상 생성 불가');
-      throw new UnauthorizedException('roomError');
-    }*/
+      throw new Error('error');
+    }
+    */
 
     if (payload.room_max_user < 2 || payload.room_max_user > 4) {
       payload.room_max_user = 4;
