@@ -33,18 +33,17 @@
   //const url = (window.location.href).replace('3000', '3131')
   //const socket = io(url);
 
-  this.socketOptions = {
-    transportOptions: {
-      polling: {
-        extraHeaders: {
-          Authorization: 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjo0LCJ1c2VyX2VtYWlsIjoiZW1haWw2IiwidXNlcl9uYW1lIjoibmFtZSIsImlhdCI6MTY3OTAyOTA0NywiZXhwIjoxNjc5MDM5ODQ3fQ.DwQLzoRrNohe6kY1ZvbiNdRCB--HwzbyKr6XGFNic_c'
-        }
-      }
-    }
-  }
-
   const socket = io("http://localhost:3131/", this.socketOptions);
 
+
+  // 소켓에 토큰 입력
+  // const token1m = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjo0LCJ1c2VyX2VtYWlsIjoiZW1haWw2IiwidXNlcl9uYW1lIjoibmFtZSIsImlhdCI6MTY3OTI3OTI5NiwiZXhwIjoxNjc5Mjc5MzU2fQ.xsrr-OEsGylyZ5FyssHTBUj0rCN4t-Oys3U14xupfn0';
+  // const socket = io("http://localhost:3131", {
+  //   query: {
+  //     token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjo0LCJ1c2VyX2VtYWlsIjoiZW1haWw2IiwidXNlcl9uYW1lIjoibmFtZSIsImlhdCI6MTY3OTI3ODQ1MiwiZXhwIjoxNjc5Mjg5MjUyfQ.QLt27c9Fdjkv_sErS0Tyrh_p9gPRAJlyx6YAMEKhmg8'
+  //     //token: token1m
+  //   }
+  // });
 
   // 인스턴스
   // let ip = document.location.href.replace('3000', '3131');
@@ -102,6 +101,10 @@
 
   socket.on('error', (data) => {
     console.log(data);
+  })
+
+  socket.on('tokenError', ()=>{
+    alert('토큰 에러')
   })
 
 

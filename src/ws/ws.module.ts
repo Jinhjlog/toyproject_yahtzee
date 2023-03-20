@@ -2,9 +2,10 @@ import { Module } from '@nestjs/common';
 import { WsAdapter } from './ws.adapter';
 import { PrismaModule } from '../prisma/prisma.module';
 import { WsPlayAdapter } from './ws.play.adapter';
+import { JwtModule, JwtService } from '@nestjs/jwt';
 
 @Module({
-  imports: [PrismaModule],
+  imports: [PrismaModule, JwtModule],
   providers: [WsAdapter, WsPlayAdapter],
 })
 export class WsModule {}

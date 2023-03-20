@@ -9,6 +9,8 @@ import {
 } from '@nestjs/websockets';
 import { Socket, Server } from 'socket.io';
 import { PrismaService } from '../prisma/prisma.service';
+import { Inject } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
 
 @WebSocketGateway(3131, {
   cors: { origin: '*' },
@@ -16,6 +18,9 @@ import { PrismaService } from '../prisma/prisma.service';
 export class WsAdapter implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
   server: Server;
+
+  @Inject()
+  private jwtService: JwtService;
 
   async handleConnection(socket: Socket) {
     //console.log(this.server.sockets.adapter.rooms);
@@ -37,6 +42,17 @@ export class WsAdapter implements OnGatewayConnection, OnGatewayDisconnect {
 
   @SubscribeMessage('createRoom')
   async createRoom(socket: Socket, payload) {
+    // 토큰 검증
+    // try {
+    //   const tokenVerify = await this.socketAuth(socket);
+    //   if (tokenVerify === null) {
+    //     throw new Error();
+    //   }
+    // } catch (e) {
+    //   socket.emit('tokenError');
+    //   throw new Error('토큰 에러(토큰이 만료되었거나 정상 토큰이 아님)');
+    // }
+
     const db_data = await this.db.getRoomHostId();
     //console.log(payload);
     // let bool = true;
@@ -68,25 +84,6 @@ export class WsAdapter implements OnGatewayConnection, OnGatewayDisconnect {
     socket.emit('createRoom', createDB);
   }
 
-  /*
-  @SubscribeMessage('hostCreateRoom')
-  async hostCreateRoom(socket: Socket, data) {
-    socket.join(data.roomNumber);
-    console.log('방만듦');
-    this.server.sockets.emit('refreshRoom', await this.getRoomList());
-  }
-
-  @SubscribeMessage('joinRoom')
-  async joinRoom(socket: Socket, data) {
-    socket.join(data.roomNumber);
-    //console.log(socket.rooms);
-    const name = socket['nickName'];
-    console.log(socket['nickName']);
-    socket
-      .to(data.roomNumber)
-      .emit('userJoinRoom', `${name}님이 입장하셨습니다!`);
-  }*/
-
   @SubscribeMessage('roomListAll')
   async roomList(socket: Socket) {
     socket.emit('refreshRoom', await this.getRoomList());
@@ -95,5 +92,23 @@ export class WsAdapter implements OnGatewayConnection, OnGatewayDisconnect {
   // db에서 방 목록 가져오기
   async getRoomList() {
     return this.db.getRoomList();
+  }
+
+  private async socketAuth(socket) {
+    let result;
+    if (socket.handshake.query.token) {
+      console.log(
+        this.jwtService.verify(socket.handshake.query.token.toString(), {
+          secret: 'user',
+        }),
+      );
+      result = this.jwtService.verify(socket.handshake.query.token.toString(), {
+        secret: 'user',
+      });
+    } else {
+      result = null;
+    }
+
+    return result;
   }
 }

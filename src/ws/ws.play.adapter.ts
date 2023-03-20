@@ -11,6 +11,7 @@ import { GameSetWsEntity } from './entities/game-set-ws.entity';
 import { Inject } from '@nestjs/common';
 import { WsAdapter } from './ws.adapter';
 import { GamePlayWsEntity } from './entities/game-play-ws.entity';
+import { JwtService } from '@nestjs/jwt';
 
 @WebSocketGateway(3131, {
   cors: { origin: '*' },
@@ -22,8 +23,22 @@ export class WsPlayAdapter implements OnGatewayConnection, OnGatewayDisconnect {
   @Inject()
   private adapter: WsAdapter;
 
+  // @Inject()
+  // private jwtService: JwtService;
   handleConnection(socket: Socket) {
     //console.log(this.server.sockets.adapter.rooms);
+    // console.log(socket.handshake.query.token);
+    // if (socket.handshake.query.token) {
+    //   try {
+    //     console.log(
+    //       this.jwtService.verify(socket.handshake.query.token.toString(), {
+    //         secret: 'user',
+    //       }),
+    //     );
+    //   } catch (e) {
+    //     console.log('토큰 에러')
+    //   }
+    // }
   }
 
   async handleDisconnect(socket: Socket) {
@@ -384,7 +399,7 @@ export class WsPlayAdapter implements OnGatewayConnection, OnGatewayDisconnect {
       gameRound: 0,
       userDiceSet: {
         throwDice: true,
-        diceCount: 2,
+        diceCount: 30,
       },
     });
 
@@ -643,7 +658,7 @@ export class WsPlayAdapter implements OnGatewayConnection, OnGatewayDisconnect {
     return result;
   }
 
-  // 현재 주사위 점수 가져오기
+  // 주사위를 던졌을 때 점수 가져오기
   async refreshScoreBoard(data) {
     const dice = [
       data.diceResult.firstDice,
@@ -706,9 +721,14 @@ export class WsPlayAdapter implements OnGatewayConnection, OnGatewayDisconnect {
         for (let j = 0; j < 4; j++) {
           smallSt2[i].push(diceSort[i + j]);
         }
-        smallSt2[i][0] += 3;
-        smallSt2[i][1] += 2;
-        smallSt2[i][2] += 1;
+        let temp = 3;
+        for (let j = 0; j < 3; j++) {
+          smallSt2[i][j] += temp;
+          temp--;
+        }
+        // smallSt2[i][0] += 3;
+        // smallSt2[i][1] += 2;
+        // smallSt2[i][2] += 1;
       }
       //console.log(smallSt2);
       for (let i = 0; i < smallSt2.length; i++) {
@@ -718,10 +738,15 @@ export class WsPlayAdapter implements OnGatewayConnection, OnGatewayDisconnect {
         }
       }
       const largeSt = diceSort;
-      largeSt[0] += 4;
-      largeSt[1] += 3;
-      largeSt[2] += 2;
-      largeSt[3] += 1;
+      let temp = 4;
+      for (let i = 0; i < 4; i++) {
+        largeSt[i] += temp;
+        temp--;
+      }
+      // largeSt[0] += 4;
+      // largeSt[1] += 3;
+      // largeSt[2] += 2;
+      // largeSt[3] += 1;
 
       for (let i = 0; i < 2; i++) {
         if (largeSt.filter((list) => smallStVal[i + 1] === list).length >= 5)
@@ -732,9 +757,14 @@ export class WsPlayAdapter implements OnGatewayConnection, OnGatewayDisconnect {
       for (let i = 0; i < diceSort.length; i++) {
         smallSt1.push(diceSort[i]);
       }
-      smallSt1[0] += 3;
-      smallSt1[1] += 2;
-      smallSt1[2] += 1;
+      let temp = 3;
+      for (let i = 0; i < 3; i++) {
+        smallSt1[i] += temp;
+        temp--;
+      }
+      // smallSt1[0] += 3;
+      // smallSt1[1] += 2;
+      // smallSt1[2] += 1;
       for (let i = 0; i < smallStVal.length; i++) {
         if (smallSt1.filter((list) => smallStVal[i] === list).length >= 4) {
           small_straight = 35;
@@ -782,6 +812,19 @@ export class WsPlayAdapter implements OnGatewayConnection, OnGatewayDisconnect {
     };
     // 총 14개
     // console.log(scoreObject);
+
+    for (let i = 1; i < Object.values(scoreObject).length; i++) {
+      if (Object.entries(scoreBoard)[i][1] === null) {
+        scoreObject[Object.entries(scoreBoard)[i][0].toString()] =
+          scoreObject[Object.entries(scoreBoard)[i][0].toString()];
+        picked.push(null);
+      } else {
+        scoreObject[Object.entries(scoreBoard)[i][0].toString()] =
+          scoreBoard[Object.entries(scoreBoard)[i][0].toString()];
+        picked.push(Object.entries(scoreBoard)[i][0].toString());
+      }
+    }
+    /*
 
     scoreObject.ones =
       scoreBoard.ones === null ? scoreObject.ones : scoreBoard.ones;
@@ -842,6 +885,7 @@ export class WsPlayAdapter implements OnGatewayConnection, OnGatewayDisconnect {
     scoreObject.yahtzee =
       scoreBoard.yahtzee === null ? scoreObject.yahtzee : scoreBoard.yahtzee;
     picked.push(scoreBoard.yahtzee === null ? null : 'yahtzee');
+    */
 
     const pick = picked.filter((data) => data !== null);
     console.log(pick);
@@ -904,4 +948,7 @@ export class WsPlayAdapter implements OnGatewayConnection, OnGatewayDisconnect {
     }
     return { gameInfoIdx: gameInfoIdx, userPlayInfoIdx: userPlayInfoIdx };
   }
+
+
+
 }
