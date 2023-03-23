@@ -12,9 +12,9 @@ import { Inject } from '@nestjs/common';
 import { WsAdapter } from './ws.adapter';
 import { GamePlayWsEntity } from './entities/game-play-ws.entity';
 import { JwtService } from '@nestjs/jwt';
-import { CreateRoomWsPlayDto } from "./dto/create-room.ws.play.dto";
-import { PutDiceWsPlayDto } from "./dto/put-dice.ws.play.dto";
-import { SaveScoreWsPlayDto } from "./dto/save-score.ws.play.dto";
+import { CreateRoomWsPlayDto } from './dto/create-room.ws.play.dto';
+import { PutDiceWsPlayDto } from './dto/put-dice.ws.play.dto';
+import { SaveScoreWsPlayDto } from './dto/save-score.ws.play.dto';
 
 @WebSocketGateway(3131, {
   cors: { origin: '*' },
@@ -184,6 +184,7 @@ export class WsPlayAdapter implements OnGatewayConnection, OnGatewayDisconnect {
   // user 방 입장
   @SubscribeMessage('joinRoom')
   async joinRoom(socket: Socket, data: CreateRoomWsPlayDto) {
+    console.log(data);
     socket.join(data.roomNumber.toString());
     await this.savePlayInfo(socket, data);
   }
@@ -196,11 +197,15 @@ export class WsPlayAdapter implements OnGatewayConnection, OnGatewayDisconnect {
     /*
      * 방 입장 제한 인원 수 초과 시 제한
      * */
+    console.log(
+      this.server.sockets.adapter.rooms.get(data.roomNumber.toString()),
+    );
     if (
-      this.server.sockets.adapter.rooms.get(data.roomNumber).size >
+      this.server.sockets.adapter.rooms.get(data.roomNumber.toString()).size >
       roomInfo.room_max_user
     ) {
       socket.emit('joinError');
+      console.log('인원수 초과');
       return false;
     }
 
@@ -240,10 +245,11 @@ export class WsPlayAdapter implements OnGatewayConnection, OnGatewayDisconnect {
     });
     this.roomInfo[index].userList.push(data.userId);
 
+
     /*
      * 참여한 room에 있는 유저들에게 새로운 유저 입장 알림
      * */
-    socket.to(data.roomNumber).emit('userJoinRoom', {
+    socket.to(data.roomNumber.toString()).emit('userJoinRoom', {
       joinUserName: data.userName,
       message: `${data.userName} 님이 입장하셨습니다.`,
     });
@@ -254,12 +260,12 @@ export class WsPlayAdapter implements OnGatewayConnection, OnGatewayDisconnect {
      * 방에 참여중인 유저 새로고침
      * */
     this.server.sockets
-      .in(data.roomNumber)
+      .in(data.roomNumber.toString())
       .emit('refreshUserList', this.roomInfo[roomNumIdx.roomInfoIdx]);
   }
 
   /*
-   * host 게임 시작 버튼 클릭 시
+   * host 게임 시작 버튼 클릭 시, user 게임 준비 버튼
    * */
   @SubscribeMessage('gameReadyBtn')
   async hostGameStart(socket: Socket) {
@@ -409,7 +415,7 @@ export class WsPlayAdapter implements OnGatewayConnection, OnGatewayDisconnect {
     /*
      * 주사위 턴 알림
      * */
-    this.server.in(data.roomNumber).emit('diceTurn', {
+    this.server.in(data.roomNumber.toString()).emit('diceTurn', {
       message: 'diceTurn',
       diceTurn: this.roomInfo[data.roomInfoIdx].userList[0],
     });
@@ -816,6 +822,9 @@ export class WsPlayAdapter implements OnGatewayConnection, OnGatewayDisconnect {
     // 총 14개
     // console.log(scoreObject);
 
+    /*
+     * 유저가 선택한 점수 제외
+     * */
     for (let i = 1; i < Object.values(scoreObject).length; i++) {
       if (Object.entries(scoreBoard)[i][1] === null) {
         scoreObject[Object.entries(scoreBoard)[i][0].toString()] =
@@ -827,68 +836,6 @@ export class WsPlayAdapter implements OnGatewayConnection, OnGatewayDisconnect {
         picked.push(Object.entries(scoreBoard)[i][0].toString());
       }
     }
-    /*
-
-    scoreObject.ones =
-      scoreBoard.ones === null ? scoreObject.ones : scoreBoard.ones;
-    picked.push(scoreBoard.ones === null ? null : 'ones');
-
-    scoreObject.twos =
-      scoreBoard.twos === null ? scoreObject.twos : scoreBoard.twos;
-    picked.push(scoreBoard.twos === null ? null : 'twos');
-
-    scoreObject.threes =
-      scoreBoard.threes === null ? scoreObject.threes : scoreBoard.threes;
-    picked.push(scoreBoard.threes === null ? null : 'threes');
-
-    scoreObject.fours =
-      scoreBoard.fours === null ? scoreObject.fours : scoreBoard.fours;
-    picked.push(scoreBoard.fours === null ? null : 'fours');
-
-    scoreObject.fives =
-      scoreBoard.fives === null ? scoreObject.fives : scoreBoard.fives;
-    picked.push(scoreBoard.fives === null ? null : 'fives');
-
-    scoreObject.sixes =
-      scoreBoard.sixes === null ? scoreObject.sixes : scoreBoard.sixes;
-    picked.push(scoreBoard.sixes === null ? null : 'sixes');
-
-    scoreObject.triple =
-      scoreBoard.triple === null ? scoreObject.triple : scoreBoard.triple;
-    picked.push(scoreBoard.triple === null ? null : 'triple');
-
-    scoreObject.four_card =
-      scoreBoard.four_card === null
-        ? scoreObject.four_card
-        : scoreBoard.four_card;
-    picked.push(scoreBoard.four_card === null ? null : 'four_card');
-
-    scoreObject.full_house =
-      scoreBoard.full_house === null
-        ? scoreObject.full_house
-        : scoreBoard.full_house;
-    picked.push(scoreBoard.full_house === null ? null : 'full_house');
-
-    scoreObject.small_straight =
-      scoreBoard.small_straight === null
-        ? scoreObject.small_straight
-        : scoreBoard.small_straight;
-    picked.push(scoreBoard.small_straight === null ? null : 'small_straight');
-
-    scoreObject.large_straight =
-      scoreBoard.large_straight === null
-        ? scoreObject.large_straight
-        : scoreBoard.large_straight;
-    picked.push(scoreBoard.large_straight === null ? null : 'large_straight');
-
-    scoreObject.chance =
-      scoreBoard.chance === null ? scoreObject.chance : scoreBoard.chance;
-    picked.push(scoreBoard.chance === null ? null : 'chance');
-
-    scoreObject.yahtzee =
-      scoreBoard.yahtzee === null ? scoreObject.yahtzee : scoreBoard.yahtzee;
-    picked.push(scoreBoard.yahtzee === null ? null : 'yahtzee');
-    */
 
     const pick = picked.filter((data) => data !== null);
     console.log(pick);

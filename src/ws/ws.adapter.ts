@@ -113,4 +113,12 @@ export class WsAdapter implements OnGatewayConnection, OnGatewayDisconnect {
 
     return result;
   }
+
+  @SubscribeMessage('findRooms')
+  async findRooms(socket: Socket) {
+    const data = await this.server.sockets.adapter.sids;
+    console.log(data);
+    const arr = Array.from(data.keys());
+    socket.emit('findRooms', arr);
+  }
 }

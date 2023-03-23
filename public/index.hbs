@@ -27,13 +27,13 @@
   <input type="text" id="roomName"/>
   <button> 방 만들기</button>
 </div>
-
+<button id="testRooms">room목록</button>
 </body>
 <script>
   //const url = (window.location.href).replace('3000', '3131')
   //const socket = io(url);
 
-  const socket = io("http://localhost:3131/", this.socketOptions);
+  const socket = io("http://localhost:3131/");
 
 
   // 소켓에 토큰 입력
@@ -106,6 +106,14 @@
   socket.on('tokenError', ()=>{
     alert('토큰 에러')
   })
+
+  document.getElementById('testRooms').addEventListener('click', () => {
+    socket.emit('findRooms')
+  })
+  socket.on('findRooms', (data) => {
+    console.log(data)
+  })
+
 
 
 
