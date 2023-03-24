@@ -156,5 +156,16 @@ export class PrismaService extends PrismaClient implements OnModuleInit {
       },
     });
   }
+
+  async changeHost(data) {
+    return this.room.update({
+      where: {
+        room_id: Number(data.roomId),
+      },
+      data: {
+        user_id: data.userId,
+      },
+    });
+  }
   // room db end
 }

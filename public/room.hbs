@@ -483,6 +483,10 @@
   })
 
 
+  socket.on('changeHost', () => {
+    console.log('방장 변경')
+    socket.emit('changeHost');
+  })
 
 </script>
 </html>
