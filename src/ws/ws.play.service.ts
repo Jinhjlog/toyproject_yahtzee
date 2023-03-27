@@ -2,6 +2,7 @@ import { GameSetWsEntity } from './entities/game-set-ws.entity';
 import { GamePlayWsEntity } from './entities/game-play-ws.entity';
 import { PrismaService } from '../prisma/prisma.service';
 import { Inject } from '@nestjs/common';
+import { Socket } from 'socket.io';
 
 export class WsPlayService {
   @Inject()
@@ -111,6 +112,41 @@ export class WsPlayService {
   }
 
   /*
-   *
+   * 유저 정보를 방 목록 별로 저장
    * */
+  async savePlayInfo(socket, roomInfo, data) {
+    await this.db.userJoinRoom(Number(data.roomNumber));
+
+    socket['userId'] = data.userId;
+    socket['userRole'] = 'user';
+    socket['userName'] = data.userName;
+
+    let index;
+    for (let i = 0; i < roomInfo.length; i++) {
+      if (roomInfo[i].roomNumber == data.roomNumber) {
+        index = i;
+      }
+    }
+
+    /*
+     * roomInfo 배열에 유저 정보 저장
+     * */
+    roomInfo[index].userInfo.push({
+      socId: [...socket.rooms][0],
+      userId: data.userId,
+      userName: data.userName,
+      userState: 'none',
+      userRole: 'user',
+    });
+
+    roomInfo[index].userList.push(data.userId);
+  }
+
+  /*
+   * 게임 시작 준비 버튼
+   * 방장 : 시작, 유저 : 게임 준비
+   * */
+  async gameReadyBtn(socket){
+
+  }
 }

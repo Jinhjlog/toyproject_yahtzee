@@ -372,22 +372,11 @@ export class WsPlayAdapter implements OnGatewayConnection, OnGatewayDisconnect {
   // user 방 입장
   @SubscribeMessage('joinRoom')
   async joinRoom(socket: Socket, data: CreateRoomWsPlayDto) {
-    // console.log(data);
-    socket.join(data.roomNumber.toString());
-    await this.savePlayInfo(socket, data);
-  }
-
-  // 유저 정보를 방목록 별로 저장
-  //@SubscribeMessage('setPlayInfo')
-  async savePlayInfo(socket: Socket, data) {
     const roomInfo = await this.db.findRoom(Number(data.roomNumber));
 
-    /*
-     * 방 입장 제한 인원 수 초과 시 제한
-     * */
-    // console.log(
-    //   this.server.sockets.adapter.rooms.get(data.roomNumber.toString()),
-    // );
+    // console.log(data);
+    socket.join(data.roomNumber.toString());
+
     if (
       this.server.sockets.adapter.rooms.get(data.roomNumber.toString()).size >
       roomInfo.room_max_user
@@ -397,45 +386,8 @@ export class WsPlayAdapter implements OnGatewayConnection, OnGatewayDisconnect {
       return false;
     }
 
-    /*
-     * db에 입장 인원 +1
-     * */
-    await this.db.userJoinRoom(Number(data.roomNumber));
-
-    /*
-     * 방 목록 새로고침
-     * */
+    await this.service.savePlayInfo(socket, this.roomInfo, data);
     this.server.emit('refreshRoom', await this.db.getRoomList());
-
-    /*
-     * 유저의 정보를 socket에 저장함
-     * */
-    socket['userId'] = data.userId;
-    socket['userRole'] = 'user';
-    socket['userName'] = data.userName;
-
-    let index;
-    for (let i = 0; i < this.roomInfo.length; i++) {
-      if (this.roomInfo[i].roomNumber == data.roomNumber) {
-        index = i;
-      }
-    }
-
-    /*
-     * roomInfo 배열에 유저 정보 저장
-     * */
-    this.roomInfo[index].userInfo.push({
-      socId: [...socket.rooms][0],
-      userId: data.userId,
-      userName: data.userName,
-      userState: 'none',
-      userRole: 'user',
-    });
-    this.roomInfo[index].userList.push(data.userId);
-
-    /*
-     * 참여한 room에 있는 유저들에게 새로운 유저 입장 알림
-     * */
     socket.to(data.roomNumber.toString()).emit('userJoinRoom', {
       joinUserName: data.userName,
       message: `${data.userName} 님이 입장하셨습니다.`,
@@ -450,6 +402,82 @@ export class WsPlayAdapter implements OnGatewayConnection, OnGatewayDisconnect {
       .in(data.roomNumber.toString())
       .emit('refreshUserList', this.roomInfo[roomNumIdx.roomInfoIdx]);
   }
+
+  // 유저 정보를 방목록 별로 저장
+  //@SubscribeMessage('setPlayInfo')
+  // refactor savePlayInfo start
+  // async savePlayInfo(socket: Socket, data) {
+  //   const roomInfo = await this.db.findRoom(Number(data.roomNumber));
+  //
+  //   /*
+  //    * 방 입장 제한 인원 수 초과 시 제한
+  //    * */
+  //   // console.log(
+  //   //   this.server.sockets.adapter.rooms.get(data.roomNumber.toString()),
+  //   // );
+  //   if (
+  //     this.server.sockets.adapter.rooms.get(data.roomNumber.toString()).size >
+  //     roomInfo.room_max_user
+  //   ) {
+  //     socket.emit('joinError');
+  //     console.log('인원수 초과');
+  //     return false;
+  //   }
+  //
+  //   /*
+  //    * db에 입장 인원 +1
+  //    * */
+  //   await this.db.userJoinRoom(Number(data.roomNumber));
+  //
+  //   /*
+  //    * 방 목록 새로고침
+  //    * */
+  //   this.server.emit('refreshRoom', await this.db.getRoomList());
+  //
+  //   /*
+  //    * 유저의 정보를 socket에 저장함
+  //    * */
+  //   socket['userId'] = data.userId;
+  //   socket['userRole'] = 'user';
+  //   socket['userName'] = data.userName;
+  //
+  //   let index;
+  //   for (let i = 0; i < this.roomInfo.length; i++) {
+  //     if (this.roomInfo[i].roomNumber == data.roomNumber) {
+  //       index = i;
+  //     }
+  //   }
+  //
+  //   /*
+  //    * roomInfo 배열에 유저 정보 저장
+  //    * */
+  //   this.roomInfo[index].userInfo.push({
+  //     socId: [...socket.rooms][0],
+  //     userId: data.userId,
+  //     userName: data.userName,
+  //     userState: 'none',
+  //     userRole: 'user',
+  //   });
+  //   this.roomInfo[index].userList.push(data.userId);
+  //
+  //   /*
+  //    * 참여한 room에 있는 유저들에게 새로운 유저 입장 알림
+  //    * */
+  //   socket.to(data.roomNumber.toString()).emit('userJoinRoom', {
+  //     joinUserName: data.userName,
+  //     message: `${data.userName} 님이 입장하셨습니다.`,
+  //   });
+  //
+  //   const roomNumIdx = await this.findUserRoom(socket['userId']);
+  //
+  //   /*
+  //    * 방에 참여중인 유저 새로고침
+  //    * */
+  //   this.server.sockets
+  //     .in(data.roomNumber.toString())
+  //     .emit('refreshUserList', this.roomInfo[roomNumIdx.roomInfoIdx]);
+  // }
+  // refactor savePlayInfo end
 
   /*
    * host 게임 시작 버튼 클릭 시, user 게임 준비 버튼
@@ -547,7 +575,7 @@ export class WsPlayAdapter implements OnGatewayConnection, OnGatewayDisconnect {
     // this.gameInfo.forEach((data) => {
     //   console.log(data.userDiceTurn);
     // });
-    this.gameInfo.forEach((data) => {
+    this.roomInfo.forEach((data) => {
       console.log(data);
     });
   }
