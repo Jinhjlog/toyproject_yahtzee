@@ -11,7 +11,6 @@ import { GameSetWsEntity } from './entities/game-set-ws.entity';
 import { Inject } from '@nestjs/common';
 import { WsAdapter } from './ws.adapter';
 import { GamePlayWsEntity } from './entities/game-play-ws.entity';
-import { JwtService } from '@nestjs/jwt';
 import { CreateRoomWsPlayDto } from './dto/create-room.ws.play.dto';
 import { PutDiceWsPlayDto } from './dto/put-dice.ws.play.dto';
 import { SaveScoreWsPlayDto } from './dto/save-score.ws.play.dto';
@@ -583,10 +582,22 @@ export class WsPlayAdapter implements OnGatewayConnection, OnGatewayDisconnect {
               'refreshRoom',
               await this.adapter.getRoomList(),
             ),
-            await this.setGamePlayInfo({
-              roomInfoIdx: hostResult.roomNumIdx.roomInfoIdx,
-              roomNumber: hostResult.roomNumIdx.roomNumber,
-            }))
+            await this.service.setGamePlayInfo(
+              socket,
+              this.roomInfo,
+              this.gameInfo,
+              {
+                roomInfoIdx: hostResult.roomNumIdx.roomInfoIdx,
+                roomNumber: hostResult.roomNumIdx.roomNumber,
+              },
+            ),
+            this.server
+              .in(hostResult.roomNumIdx.roomNumber.toString())
+              .emit('diceTurn', {
+                message: 'diceTurn',
+                diceTurn:
+                  this.roomInfo[hostResult.roomNumIdx.roomInfoIdx].userList[0],
+              }))
           : this.server.sockets
               .in(hostResult.roomNumIdx.roomNumber.toString())
               .emit('gameStart', {
@@ -627,81 +638,83 @@ export class WsPlayAdapter implements OnGatewayConnection, OnGatewayDisconnect {
     // this.gameInfo.forEach((data) => {
     //   console.log(data.userDiceTurn);
     // });
-    this.roomInfo.forEach((data) => {
+    this.gameInfo.forEach((data) => {
       console.log(data);
     });
   }
-  //-------------------------------------- 2023-03-27--
-  async setGamePlayInfo(data) {
-    const playUserInfo = this.roomInfo[data.roomInfoIdx];
-
-    const userPlayInfoArray = [];
-    const userPlayScoreArray = [];
-
-    /*
-     * 다중 생성 방지
-     * */
-    await this.gameInfo.forEach((list) => {
-      if (list.roomNumber == data.roomNumber) {
-        return false;
-      }
-    });
-
-    console.log('진행');
-
-    /*
-     * 유저별 점수 Array 생성
-     * */
-    for (let i = 0; i < playUserInfo.userList.length; i++) {
-      userPlayInfoArray.push({
-        userId: playUserInfo.userInfo[i]['userId'],
-        userName: playUserInfo.userInfo[i]['userName'],
-        userTurnCheck: false,
-        userScore: 0,
-      });
-
-      userPlayScoreArray.push({
-        userId: playUserInfo.userInfo[i]['userId'],
-        ones: null,
-        twos: null,
-        threes: null,
-        fours: null,
-        fives: null,
-        sixes: null,
-        bonus: 0,
-        triple: null,
-        four_card: null,
-        full_house: null,
-        small_straight: null,
-        large_straight: null,
-        chance: null,
-        yahtzee: null,
-      });
-    }
-
-    /*
-     * gameInfo 배열에 게임 시작 정보 저장
-     * */
-    this.gameInfo.push({
-      roomNumber: this.roomInfo[data.roomInfoIdx].roomNumber,
-      userPlayInfo: userPlayInfoArray,
-      userDiceTurn: this.roomInfo[data.roomInfoIdx].userList.concat(),
-      userYahtScore: userPlayScoreArray,
-      gameRound: 0,
-      userDiceSet: {
-        throwDice: true,
-        diceCount: 2,
-      },
-    });
-
-    /*
-     * 주사위 턴 알림
-     * */
-    this.server.in(data.roomNumber.toString()).emit('diceTurn', {
-      message: 'diceTurn',
-      diceTurn: this.roomInfo[data.roomInfoIdx].userList[0],
-    });
-  }
+  //-------------------------------------- 2023-03-27 --
+  // refactor setGamePlayInfo start
+  // async setGamePlayInfo(data) {
+  //   const playUserInfo = this.roomInfo[data.roomInfoIdx];
+  //
+  //   const userPlayInfoArray = [];
+  //   const userPlayScoreArray = [];
+  //
+  //   /*
+  //    * 다중 생성 방지
+  //    * */
+  //   await this.gameInfo.forEach((list) => {
+  //     if (list.roomNumber == data.roomNumber) {
+  //       return false;
+  //     }
+  //   });
+  //
+  //   console.log('진행');
+  //
+  //   /*
+  //    * 유저별 점수 Array 생성
+  //    * */
+  //   for (let i = 0; i < playUserInfo.userList.length; i++) {
+  //     userPlayInfoArray.push({
+  //       userId: playUserInfo.userInfo[i]['userId'],
+  //       userName: playUserInfo.userInfo[i]['userName'],
+  //       userTurnCheck: false,
+  //       userScore: 0,
+  //     });
+  //
+  //     userPlayScoreArray.push({
+  //       userId: playUserInfo.userInfo[i]['userId'],
+  //       ones: null,
+  //       twos: null,
+  //       threes: null,
+  //       fours: null,
+  //       fives: null,
+  //       sixes: null,
+  //       bonus: 0,
+  //       triple: null,
+  //       four_card: null,
+  //       full_house: null,
+  //       small_straight: null,
+  //       large_straight: null,
+  //       chance: null,
+  //       yahtzee: null,
+  //     });
+  //   }
+  //
+  //   /*
+  //    * gameInfo 배열에 게임 시작 정보 저장
+  //    * */
+  //   this.gameInfo.push({
+  //     roomNumber: this.roomInfo[data.roomInfoIdx].roomNumber,
+  //     userPlayInfo: userPlayInfoArray,
+  //     userDiceTurn: this.roomInfo[data.roomInfoIdx].userList.concat(),
+  //     userYahtScore: userPlayScoreArray,
+  //     gameRound: 0,
+  //     userDiceSet: {
+  //       throwDice: true,
+  //       diceCount: 2,
+  //     },
+  //   });
+  //
+  //   /*
+  //    * 주사위 턴 알림
+  //    * */
+  //   // this.server.in(data.roomNumber.toString()).emit('diceTurn', {
+  //   //   message: 'diceTurn',
+  //   //   diceTurn: this.roomInfo[data.roomInfoIdx].userList[0],
+  //   // });
+  // }
+  // refactor setGamePlayInfo end
 
   /*
    * 사용자가 주사위를 던졌을 때
@@ -1474,7 +1487,7 @@ export class WsPlayAdapter implements OnGatewayConnection, OnGatewayDisconnect {
         this.gameInfo[gameInfoIdx.gameInfoIdx].userDiceSet['diceCount'] = 2;
       }
     } catch (e) {
-      console.log('주사위 턴 에러');
+      console.log('주사위 턴 체크');
     }
   }
 }

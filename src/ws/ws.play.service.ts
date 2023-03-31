@@ -161,6 +161,7 @@ export class WsPlayService {
       bool: bool,
       noneList: noneList,
       roomNumIdx: roomNumIdx,
+      roomInfoIdx: roomNumIdx.roomInfoIdx,
     };
   }
 
@@ -185,6 +186,74 @@ export class WsPlayService {
     return {
       roomNumIdx: roomNumIdx,
     };
+  }
+
+  /*
+   * 게임 시작 시 게임 진행시 필요한 데이터 세팅
+   * */
+  async setGamePlayInfo(socket, roomInfo, gameInfo, data) {
+    const roomNumIdx = await this.findUserRoom(roomInfo, socket['userId']);
+    const gameInfoIdx = await this.findGameInfoIdx(gameInfo, {
+      roomNumber: roomNumIdx.roomNumber,
+      userId: socket['userId'],
+    });
+    const playUserInfo = roomInfo[data.roomInfoIdx];
+
+    const userPlayInfoArray = [];
+    const userPlayScoreArray = [];
+
+    await gameInfo.forEach((list) => {
+      if (list.roomNumber == data.roomNumber) {
+        return false;
+      }
+    });
+
+    console.log('진행');
+
+    /*
+     * 유저별 점수 Array 생성
+     * */
+    for (let i = 0; i < playUserInfo.userList.length; i++) {
+      userPlayInfoArray.push({
+        userId: playUserInfo.userInfo[i]['userId'],
+        userName: playUserInfo.userInfo[i]['userName'],
+        userTurnCheck: false,
+        userScore: 0,
+      });
+
+      userPlayScoreArray.push({
+        userId: playUserInfo.userInfo[i]['userId'],
+        ones: null,
+        twos: null,
+        threes: null,
+        fours: null,
+        fives: null,
+        sixes: null,
+        bonus: 0,
+        triple: null,
+        four_card: null,
+        full_house: null,
+        small_straight: null,
+        large_straight: null,
+        chance: null,
+        yahtzee: null,
+      });
+    }
+
+    /*
+     * gameInfo 배열에 게임 시작 정보 저장
+     * */
+    gameInfo.push({
+      roomNumber: roomInfo[data.roomInfoIdx].roomNumber,
+      userPlayInfo: userPlayInfoArray,
+      userDiceTurn: roomInfo[data.roomInfoIdx].userList.concat(),
+      userYahtScore: userPlayScoreArray,
+      gameRound: 0,
+      userDiceSet: {
+        throwDice: true,
+        diceCount: 2,
+      },
+    });
   }
 
   /*
