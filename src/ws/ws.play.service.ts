@@ -254,6 +254,21 @@ export class WsPlayService {
         throwDice: true,
         diceCount: 2,
       },
+      throwDiceScoreResult: {
+        ones: null,
+        twos: null,
+        threes: null,
+        fours: null,
+        fives: null,
+        sixes: null,
+        triple: null,
+        four_card: null,
+        full_house: null,
+        small_straight: null,
+        large_straight: null,
+        chance: null,
+        yahtzee: null,
+      },
     });
   }
 
@@ -381,7 +396,12 @@ export class WsPlayService {
   /*
    * 주사위를 던졌을 때 점수 가져오기
    * */
-  async refreshScoreBoard(gameInfo, data) {
+  async refreshScoreBoard(socket, roomInfo, gameInfo, data) {
+    const roomNumIdx = await this.findUserRoom(roomInfo, socket['userId']);
+    const gameInfoIdx = await this.findGameInfoIdx(gameInfo, {
+      roomNumber: roomNumIdx.roomNumber,
+      userId: socket['userId'],
+    });
     const dice = [
       data.diceResult.firstDice,
       data.diceResult.secDice,
@@ -550,6 +570,24 @@ export class WsPlayService {
         : 0;
 
     scoreObject['bonus'] = bonus;
+
+    // // 2023-03-31 추가
+    gameInfo[gameInfoIdx.gameInfoIdx].throwDiceScoreResult = {
+      ones: scoreObject.ones,
+      twos: scoreObject.twos,
+      threes: scoreObject.threes,
+      fours: scoreObject.fours,
+      fives: scoreObject.fives,
+      sixes: scoreObject.sixes,
+      triple: scoreObject.triple,
+      four_card: scoreObject.four_card,
+      full_house: scoreObject.full_house,
+      small_straight: scoreObject.small_straight,
+      large_straight: scoreObject.large_straight,
+      chance: scoreObject.chance,
+      yahtzee: scoreObject.yahtzee,
+    };
+
     return { scoreValue: scoreObject, picked: pick };
   }
 
@@ -630,5 +668,25 @@ export class WsPlayService {
     }
 
     return userName.userName;
+  }
+
+  /*
+   * (임시) 유저가 선택한 점수를 가져옴
+   * */
+  async getPickScoreVal(socket, roomInfo, gameInfo, data) {
+    const roomNumIdx = await this.findUserRoom(roomInfo, socket['userId']);
+    const gameInfoIdx = await this.findGameInfoIdx(gameInfo, {
+      roomNumber: roomNumIdx.roomNumber,
+      userId: socket['userId'],
+    });
+
+    console.log(
+      `${data.scoreType}`,
+      gameInfo[gameInfoIdx.gameInfoIdx].throwDiceScoreResult[data.scoreType],
+    );
+
+    return gameInfo[gameInfoIdx.gameInfoIdx].throwDiceScoreResult[
+      data.scoreType
+    ];
   }
 }

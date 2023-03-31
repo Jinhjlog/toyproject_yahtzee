@@ -173,7 +173,7 @@
 
   // 인스턴스
   // let ip = document.location.href.replace('3000', '3131');
-  // const socket = io(`http://3.34.138.148:3131/`);
+  // const socket = io(`http://3.38.165.165:3131/`);
   // console.log(ip)
 
   const temp_id = Math.floor(Math.random() * 9999) + 1;
@@ -391,7 +391,7 @@
 
       socket.emit('saveScore', {
         scoreType: scoreType,
-        scoreValue: scoreVal,
+        //scoreValue: scoreVal,
       })
     })
   }
@@ -403,7 +403,7 @@
       console.log(scoreType)
       socket.emit('saveScore', {
         scoreType: scoreType,
-        scoreValue: scoreVal,
+        //scoreValue: scoreVal,
       })
     })
   }

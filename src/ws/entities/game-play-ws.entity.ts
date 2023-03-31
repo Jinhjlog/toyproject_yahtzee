@@ -37,4 +37,6 @@ export class GamePlayWsEntity {
   // }
   gameRound: number;
   userDiceSet: object;
+
+  throwDiceScoreResult: object;
 }
