@@ -143,10 +143,93 @@ export class WsPlayService {
   }
 
   /*
-   * 게임 시작 준비 버튼
-   * 방장 : 시작, 유저 : 게임 준비
+   * 방장 게임 시작 버튼
    * */
-  async gameReadyBtn(socket){
+  async hostGameStartBtn(socket, roomInfo) {
+    const roomNumIdx = await this.findUserRoom(roomInfo, socket['userId']);
+    let bool = true;
+    const noneList = [];
+    if (roomInfo[roomNumIdx.roomInfoIdx].userInfo.length >= 2) {
+      roomInfo[roomNumIdx.roomInfoIdx].userInfo.forEach((list) => {
+        if (list['userState'] != 'ready') {
+          noneList.push(list['userName']);
+          bool = false;
+        }
+      });
+    }
+    return {
+      bool: bool,
+      noneList: noneList,
+      roomNumIdx: roomNumIdx,
+    };
+  }
 
+  /*
+   * 유저 게임 준비 버튼
+   * */
+  async userGameReadyBtn(socket, roomInfo) {
+    const roomNumIdx = await this.findUserRoom(roomInfo, socket['userId']);
+    /*
+     * 유저 준비 상태에 따른 준비, 준비 취소
+     * */
+    roomInfo[roomNumIdx.roomInfoIdx].userInfo[roomNumIdx.userInfoIdx][
+      'userState'
+    ] == 'none'
+      ? (roomInfo[roomNumIdx.roomInfoIdx].userInfo[roomNumIdx.userInfoIdx][
+          'userState'
+        ] = 'ready')
+      : (roomInfo[roomNumIdx.roomInfoIdx].userInfo[roomNumIdx.userInfoIdx][
+          'userState'
+        ] = 'none');
+
+    return {
+      roomNumIdx: roomNumIdx,
+    };
+  }
+
+  /*
+   * userId로 roomNumber 찾기
+   * */
+  private async findUserRoom(roomInfo, userId) {
+    let roomNumber = null;
+    let roomInfoidx = null;
+    let userInfoIdx = null;
+    await roomInfo.forEach((info, index) => {
+      for (let i = 0; i < info.userInfo.length; i++) {
+        if (info.userInfo[i]['userId'] == userId) {
+          roomNumber = info.roomNumber;
+          roomInfoidx = index;
+          userInfoIdx = i;
+        }
+      }
+    });
+
+    return {
+      roomNumber: roomNumber,
+      roomInfoIdx: roomInfoidx,
+      userInfoIdx: userInfoIdx,
+    };
+  }
+
+  /*
+   * roomNumber로 gameInfo 배열의 idx 찾기
+   * */
+  private async findGameInfoIdx(gameInfo, data) {
+    // data : { roomNumber, userId }
+    // data : roomNumber, userId
+    let gameInfoIdx = null;
+    let userPlayInfoIdx = null;
+    for (let i = 0; i < gameInfo.length; i++) {
+      console.log(gameInfo[i].roomNumber, ' =>', data.roomNumber);
+      if (gameInfo[i].roomNumber == data.roomNumber) {
+        gameInfoIdx = i;
+        for (let j = 0; j < gameInfo[i].userPlayInfo.length; j++) {
+          if (gameInfo[i].userPlayInfo[j]['userId'] == data.userId) {
+            userPlayInfoIdx = j;
+          }
+        }
+      }
+    }
+    return { gameInfoIdx: gameInfoIdx, userPlayInfoIdx: userPlayInfoIdx };
   }
 }
