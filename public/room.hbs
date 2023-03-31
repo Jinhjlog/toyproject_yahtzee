@@ -419,7 +419,7 @@
   })
 
   socket.on('userScoreBoard', (data) => {
-    refreshScoreBoard(data)
+    refreshScoreBoard(data.scoreBoard)
     console.log(data);
     for(let i = 0;i< 6; i++){
       diceScoreTable.querySelector(`tr:nth-child(${i+1}) > td:nth-child(${4})`).innerText = '';
