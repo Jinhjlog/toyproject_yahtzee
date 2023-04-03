@@ -689,4 +689,27 @@ export class WsPlayService {
       data.scoreType
     ];
   }
+
+  /*
+   *  특정 유저 점수판을 가져옴
+   * */
+  async getUserScoreBoard(socket, roomInfo, gameInfo, data) {
+    const roomNumIdx = await this.findUserRoom(roomInfo, socket['userId']);
+    const gameInfoIdx = await this.findGameInfoIdx(gameInfo, {
+      roomNumber: roomNumIdx.roomNumber,
+      userId: data.userId,
+    });
+
+    const scoreData =
+      gameInfo[gameInfoIdx.gameInfoIdx].userYahtScore[
+        gameInfoIdx.userPlayInfoIdx
+      ];
+    for (let i = 0; i < Object.values(scoreData).length; i++) {
+      if (Object.entries(scoreData)[i][1] === null) {
+        scoreData[`${Object.entries(scoreData)[i][0]}`] = 0;
+      }
+    }
+
+    return scoreData;
+  }
 }

@@ -380,14 +380,13 @@ export class WsPlayAdapter implements OnGatewayConnection, OnGatewayDisconnect {
       userId: socket['userId'],
     });
 
-    console.log(this.roomInfo)
-    console.log('=--------------------------=')
-    console.log(this.roomInfo[roomNumIdx.roomInfoIdx].userInfo)
-    console.log('===================================================')
+    console.log(this.roomInfo);
+    console.log('=--------------------------=');
+    console.log(this.roomInfo[roomNumIdx.roomInfoIdx].userInfo);
+    console.log('===================================================');
     console.log(this.gameInfo);
-    console.log('=--------------------------=')
-    console.log(this.gameInfo[gameInfoIdx.gameInfoIdx])
-
+    console.log('=--------------------------=');
+    console.log(this.gameInfo[gameInfoIdx.gameInfoIdx]);
   }
   /*
    * 사용자가 주사위를 던졌을 때
@@ -678,5 +677,17 @@ export class WsPlayAdapter implements OnGatewayConnection, OnGatewayDisconnect {
     this.server.sockets
       .in(roomNumIdx.roomNumber.toString())
       .emit('refreshUserList', this.roomInfo[roomNumIdx.roomInfoIdx]);
+  }
+
+  @SubscribeMessage('getUserScoreBoard')
+  async getUserScoreBoard(socket: Socket, data) {
+    const scoreData = await this.service.getUserScoreBoard(
+      socket,
+      this.roomInfo,
+      this.gameInfo,
+      data,
+    );
+
+    socket.emit('getUserScoreBoard', scoreData);
   }
 }

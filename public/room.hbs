@@ -233,7 +233,16 @@
     for(let i =0;i<data.userInfo.length; i++){
       const li = document.createElement('li');
       li.innerText = `${data.userInfo[i].userRole} : ${data.userInfo[i].userName} ==> ${data.userInfo[i].userState}`
+      li.onclick = function() {
+        let id = data.userInfo[i].userName.replace('test', '');
+        socket.emit('getUserScoreBoard', {
+          userId: id,
+        })
+      }
+
       userList_ul.appendChild(li);
+
+
     }
   })
 
@@ -486,6 +495,10 @@
   socket.on('changeHost', () => {
     console.log('방장 변경')
     socket.emit('changeHost');
+  })
+
+  socket.on('getUserScoreBoard', (data) => {
+    console.log(data);
   })
 
 </script>
