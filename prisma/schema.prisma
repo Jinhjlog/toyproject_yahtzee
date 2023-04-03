@@ -20,6 +20,7 @@ model User {
 model Room {
   room_id         Int    @id @default(autoincrement())
   user_id         Int
+  user_name       String
   room_name       String
   room_state      String
   room_user_count Int    @default(1)

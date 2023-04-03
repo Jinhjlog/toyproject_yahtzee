@@ -71,12 +71,16 @@ export class WsAdapter implements OnGatewayConnection, OnGatewayDisconnect {
       throw new Error('error');
     }
     */
+    const userInfo = await this.db.getUserInfo({
+      user_id: payload.user_id,
+    });
 
     if (payload.room_max_user < 2 || payload.room_max_user > 4) {
       payload.room_max_user = 4;
     }
     const createDB = await this.db.createRoom({
       user_id: payload.user_id,
+      user_name: userInfo.user_name,
       room_name: payload.roomName,
       room_state: 'waiting',
       room_max_user: payload.room_max_user,

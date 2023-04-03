@@ -133,6 +133,8 @@ export class WsPlayAdapter implements OnGatewayConnection, OnGatewayDisconnect {
         await this.db.changeHost({
           roomId: roomNumIdx.roomNumber,
           userId: this.roomInfo[roomNumIdx.roomInfoIdx].userInfo[0]['userId'],
+          user_name:
+            this.roomInfo[roomNumIdx.roomInfoIdx].userInfo[0]['userName'],
         });
         this.server.sockets
           .in(this.roomInfo[roomNumIdx.roomInfoIdx].userInfo[0]['socId'])
@@ -378,7 +380,14 @@ export class WsPlayAdapter implements OnGatewayConnection, OnGatewayDisconnect {
       userId: socket['userId'],
     });
 
-    console.log(this.gameInfo[gameInfoIdx.gameInfoIdx].throwDiceScoreResult);
+    console.log(this.roomInfo)
+    console.log('=--------------------------=')
+    console.log(this.roomInfo[roomNumIdx.roomInfoIdx].userInfo)
+    console.log('===================================================')
+    console.log(this.gameInfo);
+    console.log('=--------------------------=')
+    console.log(this.gameInfo[gameInfoIdx.gameInfoIdx])
+
   }
   /*
    * 사용자가 주사위를 던졌을 때

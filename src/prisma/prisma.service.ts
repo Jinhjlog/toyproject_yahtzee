@@ -45,6 +45,20 @@ export class PrismaService extends PrismaClient implements OnModuleInit {
     });
   }
 
+  // 특정 유저 회원 정보 불러오기
+  async getUserInfo(data) {
+    return this.user.findUnique({
+      where: {
+        user_id: data.user_id,
+      },
+      select: {
+        user_id: true,
+        user_email: true,
+        user_name: true,
+      },
+    });
+  }
+
   //Token db
   async setToken(data) {
     return this.token.create({
@@ -97,6 +111,8 @@ export class PrismaService extends PrismaClient implements OnModuleInit {
     return this.room.findMany({
       select: {
         room_id: true,
+        user_id: true,
+        user_name: true,
         room_name: true,
         room_state: true,
         room_user_count: true,
@@ -119,7 +135,7 @@ export class PrismaService extends PrismaClient implements OnModuleInit {
     });
   }
 
-  async userQuitRoom(roomId) {
+  async userQuitRoom(roomId: number) {
     return this.room.update({
       where: {
         room_id: roomId,
@@ -164,6 +180,7 @@ export class PrismaService extends PrismaClient implements OnModuleInit {
       },
       data: {
         user_id: data.userId,
+        user_name: data.user_name,
       },
     });
   }
