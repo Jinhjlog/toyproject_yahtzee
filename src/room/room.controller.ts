@@ -1,5 +1,6 @@
 import { Body, Controller, Get, Post } from '@nestjs/common';
 import { RoomService } from './room.service';
+import { CreateRoomDto } from './dto/create.room.dto';
 
 @Controller('api')
 export class RoomController {
@@ -11,7 +12,7 @@ export class RoomController {
   // }
 
   @Post('/createRoom')
-  createRoom(@Body() data) {
+  createRoom(@Body() data: CreateRoomDto) {
     return this.roomService.createRoom(data);
   }
 }

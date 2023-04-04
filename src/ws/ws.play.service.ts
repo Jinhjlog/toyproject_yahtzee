@@ -699,11 +699,19 @@ export class WsPlayService {
       roomNumber: roomNumIdx.roomNumber,
       userId: data.userId,
     });
-
-    const scoreData =
-      gameInfo[gameInfoIdx.gameInfoIdx].userYahtScore[
+    console.log(
+      typeof gameInfo[gameInfoIdx.gameInfoIdx].userYahtScore[
         gameInfoIdx.userPlayInfoIdx
-      ];
+      ],
+    );
+
+    const scoreData = JSON.parse(
+      JSON.stringify(
+        gameInfo[gameInfoIdx.gameInfoIdx].userYahtScore[
+          gameInfoIdx.userPlayInfoIdx
+        ],
+      ),
+    );
     for (let i = 0; i < Object.values(scoreData).length; i++) {
       if (Object.entries(scoreData)[i][1] === null) {
         scoreData[`${Object.entries(scoreData)[i][0]}`] = 0;
