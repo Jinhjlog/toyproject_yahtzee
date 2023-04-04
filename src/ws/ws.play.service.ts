@@ -699,11 +699,12 @@ export class WsPlayService {
       roomNumber: roomNumIdx.roomNumber,
       userId: data.userId,
     });
-    console.log(
-      typeof gameInfo[gameInfoIdx.gameInfoIdx].userYahtScore[
-        gameInfoIdx.userPlayInfoIdx
-      ],
-    );
+    // console.log(
+    //   typeof gameInfo[gameInfoIdx.gameInfoIdx].userYahtScore[
+    //     gameInfoIdx.userPlayInfoIdx
+    //   ],
+    // );
+
 
     const scoreData = JSON.parse(
       JSON.stringify(
@@ -717,7 +718,12 @@ export class WsPlayService {
         scoreData[`${Object.entries(scoreData)[i][0]}`] = 0;
       }
     }
+    scoreData['userName'] =
+      gameInfo[gameInfoIdx.gameInfoIdx].userPlayInfo[
+        gameInfoIdx.userPlayInfoIdx
+      ]['userName'];
 
+    console.log(scoreData)
     return scoreData;
   }
 }
