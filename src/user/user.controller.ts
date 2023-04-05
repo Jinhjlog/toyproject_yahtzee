@@ -34,7 +34,18 @@ export class UserController {
     return this.userService.updateToken(req.headers);
   }
 
+  @UseGuards(JwtAuthGuardRefresh)
+  @Put('/getAccessToken')
+  getAccessToken(@Request() req) {
+    return this.userService.getAccessToken(req.headers);
+  }
+
   @UseGuards(JwtAuthGuardUser)
+  @Put('/getRefreshToken')
+  getRefreshToken(@Request() req) {
+    return this.userService.getRefreshToken(req.headers);
+  }
+
   @Delete('/signOut')
   signOut(@Request() req) {
     return this.userService.signOut(req.headers);

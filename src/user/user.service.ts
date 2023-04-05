@@ -163,14 +163,88 @@ export class UserService {
 
     return insertDBData;
   }
+  async getAccessToken(headers) {
+    const userRefreshToken = headers.authorization.substring(7);
+    const userInfo = await this.jwtService.decode(userRefreshToken);
+
+    /*
+     * db에 해당 유저의 리프레시 토큰이 존재 하는지 확인
+     * */
+    const db_data = await this.db.findUserToken(userInfo);
+    if (!db_data || userRefreshToken !== db_data.refresh_token) {
+      return 0;
+    }
+
+    const payload = {
+      user_id: userInfo['user_id'],
+      user_email: userInfo['user_email'],
+      user_name: userInfo['user_name'],
+    };
+
+    const accessToken = this.jwtService.sign(payload, {
+      secret: 'user',
+      expiresIn: '3h',
+    });
+
+    await this.db.updateToken({
+      user_email: userInfo['user_email'],
+      ...{
+        access_token: accessToken,
+      },
+    });
+
+    return {
+      access_token: accessToken,
+    };
+  }
+
+  async getRefreshToken(headers) {
+    const userAccessToken = headers.authorization.substring(7);
+    const userInfo = await this.jwtService.decode(userAccessToken);
+
+    /*
+     * db에 해당 유저의 Access 토큰이 존재 하는지 확인
+     * */
+    const db_data = await this.db.findUserToken(userInfo);
+    if (!db_data || userAccessToken !== db_data.access_token) {
+      return 0;
+    }
+
+    const payload = {
+      user_id: userInfo['user_id'],
+      user_email: userInfo['user_email'],
+      user_name: userInfo['user_name'],
+    };
+
+    const refreshToken = this.jwtService.sign(payload, {
+      secret: 'refresh',
+      expiresIn: '1d',
+    });
+
+    await this.db.updateToken({
+      user_email: userInfo['user_email'],
+      ...{
+        refresh_token: refreshToken,
+      },
+    });
+
+    return {
+      refresh_token: refreshToken,
+    };
+  }
 
   async signOut(headers) {
     let userInfo = headers.authorization.substring(7);
     userInfo = this.jwtService.decode(userInfo);
 
-    const db_data = await this.db.deleteToken({
-      user_email: userInfo.user_email,
-    });
+    let db_data;
+    try {
+      db_data = await this.db.deleteToken({
+        user_email: userInfo.user_email,
+      });
+    } catch (e) {
+      console.log('db에 유저가 존재하지 않음')
+    }
 
     if (!db_data) {
       throw new NotFoundException('not Found User');

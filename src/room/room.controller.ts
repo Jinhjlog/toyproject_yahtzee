@@ -1,6 +1,7 @@
-import { Body, Controller, Get, Post } from '@nestjs/common';
+import { Body, Controller, Get, Post, UseGuards } from "@nestjs/common";
 import { RoomService } from './room.service';
 import { CreateRoomDto } from './dto/create.room.dto';
+import { JwtAuthGuardUser } from "../auth/access/jwt.auth.guard.user";
 
 @Controller('api')
 export class RoomController {
@@ -11,6 +12,7 @@ export class RoomController {
   //   return this.roomService.getRoomHostId(data);
   // }
 
+  @UseGuards(JwtAuthGuardUser)
   @Post('/createRoom')
   createRoom(@Body() data: CreateRoomDto) {
     return this.roomService.createRoom(data);

@@ -15,6 +15,7 @@ import { CreateRoomWsPlayDto } from './dto/create-room.ws.play.dto';
 import { PutDiceWsPlayDto } from './dto/put-dice.ws.play.dto';
 import { SaveScoreWsPlayDto } from './dto/save-score.ws.play.dto';
 import { WsPlayService } from './ws.play.service';
+import { Interval } from '@nestjs/schedule';
 
 @WebSocketGateway(3131, {
   cors: { origin: '*' },
@@ -689,5 +690,37 @@ export class WsPlayAdapter implements OnGatewayConnection, OnGatewayDisconnect {
     );
 
     socket.emit('getUserScoreBoard', scoreData);
+  }
+  @Interval(10000)
+  async deleteEmptyRoom() {
+    const {
+      sockets: {
+        adapter: { sids, rooms },
+      },
+    } = this.server;
+
+    // console.log(sids);
+    const publicRooms = [];
+    rooms.forEach((_, key) => {
+      if (sids.get(key) === undefined) {
+        publicRooms.push(key);
+      }
+    });
+
+    const roomList = await this.db.getRoomList();
+
+    roomList.forEach((data) => {
+      let bool = false;
+      publicRooms.forEach((rooms) => {
+        if (data.room_id === +rooms) {
+          bool = true;
+        }
+      });
+      if (bool === false) {
+        try {
+          this.db.deleteRoom(data.room_id);
+        } catch (e) {}
+      }
+    });
   }
 }

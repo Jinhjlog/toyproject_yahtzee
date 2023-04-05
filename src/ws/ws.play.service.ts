@@ -705,7 +705,6 @@ export class WsPlayService {
     //   ],
     // );
 
-
     const scoreData = JSON.parse(
       JSON.stringify(
         gameInfo[gameInfoIdx.gameInfoIdx].userYahtScore[
@@ -723,7 +722,7 @@ export class WsPlayService {
         gameInfoIdx.userPlayInfoIdx
       ]['userName'];
 
-    console.log(scoreData)
+    console.log(scoreData);
     return scoreData;
   }
 }
