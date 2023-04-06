@@ -243,7 +243,7 @@ export class UserService {
         user_email: userInfo.user_email,
       });
     } catch (e) {
-      console.log('db에 유저가 존재하지 않음')
+      console.log('db에 유저가 존재하지 않음');
     }
 
     if (!db_data) {

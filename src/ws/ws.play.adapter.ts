@@ -436,7 +436,11 @@ export class WsPlayAdapter implements OnGatewayConnection, OnGatewayDisconnect {
       socket.emit('throwDice', {
         state: 0,
         message: `${
-          this.gameInfo[gameInfoIdx.gameInfoIdx].userDiceTurn[0]
+          await this.service.getDiceTurnName(
+            this.gameInfo[gameInfoIdx.gameInfoIdx].userDiceTurn[0],
+            this.gameInfo[gameInfoIdx.gameInfoIdx].userPlayInfo,
+          )
+          // this.gameInfo[gameInfoIdx.gameInfoIdx].userDiceTurn[0]
         }의 턴`,
       });
     }
@@ -595,14 +599,6 @@ export class WsPlayAdapter implements OnGatewayConnection, OnGatewayDisconnect {
           'userScoreInfo',
           this.gameInfo[gameInfoIdx.gameInfoIdx].userPlayInfo, // 현재 진행중인 room의 유저들 아이디, 이름, 점수(확인필요) 를 전달함
         );
-        this.server.in(roomNumIdx.roomNumber.toString()).emit('diceTurn', {
-          message: 'diceTurn',
-          diceTurn: this.gameInfo[gameInfoIdx.gameInfoIdx].userDiceTurn[0], // 현재 주사위 턴 유저 전달
-          diceTurnName: await this.service.getDiceTurnName(
-            this.gameInfo[gameInfoIdx.gameInfoIdx].userDiceTurn[0],
-            this.gameInfo[gameInfoIdx.gameInfoIdx].userPlayInfo,
-          ),
-        });
 
         if (await this.service.gameEndCheck(this.gameInfo, gameInfoIdx)) {
           const result = await this.service.gameEndMethod(
@@ -617,7 +613,18 @@ export class WsPlayAdapter implements OnGatewayConnection, OnGatewayDisconnect {
               .in(roomNumIdx.roomNumber.toString())
               .emit('gameEnd', result.reverse());
           }
+        } else {
+          this.server.in(roomNumIdx.roomNumber.toString()).emit('diceTurn', {
+            message: 'diceTurn',
+            diceTurn: this.gameInfo[gameInfoIdx.gameInfoIdx].userDiceTurn[0], // 현재 주사위 턴 유저 전달
+            diceTurnName: await this.service.getDiceTurnName(
+              this.gameInfo[gameInfoIdx.gameInfoIdx].userDiceTurn[0],
+              this.gameInfo[gameInfoIdx.gameInfoIdx].userPlayInfo,
+            ),
+          });
         }
+
+
       } else {
         console.log('이미 입력된 점수');
         socket.emit('error', {
