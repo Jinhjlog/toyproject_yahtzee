@@ -623,8 +623,6 @@ export class WsPlayAdapter implements OnGatewayConnection, OnGatewayDisconnect {
             ),
           });
         }
-
-
       } else {
         console.log('이미 입력된 점수');
         socket.emit('error', {

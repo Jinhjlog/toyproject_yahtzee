@@ -12,6 +12,10 @@ export class UserService {
 
   // 회원가입
   async signUp(data) {
+    if (data.user_email.length <= 0 || data.user_pw.length <= 0) {
+      return '잘못된 입력';
+    }
+
     // 이메일 중복체크
     const check = await this.emailDupCheck(data.user_email);
     if (!check) {
