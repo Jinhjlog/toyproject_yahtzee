@@ -457,6 +457,8 @@ export class WsPlayAdapter implements OnGatewayConnection, OnGatewayDisconnect {
       userId: socket['userId'],
     });
 
+    console.log('putDiceData', data.diceIndex)
+
     if (
       socket['userId'] ==
         this.gameInfo[gameInfoIdx.gameInfoIdx].userDiceTurn[0] &&
@@ -487,6 +489,7 @@ export class WsPlayAdapter implements OnGatewayConnection, OnGatewayDisconnect {
             roomNumber: roomNumIdx.roomNumber,
           },
         ),
+        diceIndex: data.diceIndex,
         diceCount:
           this.gameInfo[gameInfoIdx.gameInfoIdx].userDiceSet['diceCount'],
       });
