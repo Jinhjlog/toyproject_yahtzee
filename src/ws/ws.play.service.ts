@@ -249,7 +249,7 @@ export class WsPlayService {
       gameRound: 0,
       userDiceSet: {
         throwDice: true,
-        diceCount: 2,
+        diceCount: 3,
       },
       throwDiceScoreResult: {
         ones: null,
@@ -328,7 +328,7 @@ export class WsPlayService {
         gameInfo[gameInfoIdx.gameInfoIdx].userDiceTurn[0] == socket['userId']
       ) {
         gameInfo[gameInfoIdx.gameInfoIdx].userDiceSet['throwDice'] = true;
-        gameInfo[gameInfoIdx.gameInfoIdx].userDiceSet['diceCount'] = 2;
+        gameInfo[gameInfoIdx.gameInfoIdx].userDiceSet['diceCount'] = 3;
 
         return true;
       } else {

@@ -272,7 +272,20 @@
       let diceBtn = document.createElement("button");
       diceBtn.innerText = '주사위 던지기';
       diceBtn.onclick = function() {
-        socket.emit('throwDice')
+        let arr = [];
+        for(let i = 0;i<putDiceArr.length; i++){
+          if(putDiceArr[i]){
+            arr.push(i);
+          }
+        }
+        socket.emit('tempthrowDice', {
+          diceResult: diceResult,
+          diceIndex: arr,
+        })
+
+        putDiceArr = [false, false, false, false, false];
+
+        //----------------------------------------------
       }
       gameSetDiv.innerText = '';
       gameSetDiv.appendChild(diceBtn);

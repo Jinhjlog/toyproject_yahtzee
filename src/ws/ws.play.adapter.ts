@@ -389,6 +389,128 @@ export class WsPlayAdapter implements OnGatewayConnection, OnGatewayDisconnect {
     console.log('=--------------------------=');
     console.log(this.gameInfo[gameInfoIdx.gameInfoIdx]);
   }
+
+  /*
+   * 주사위 통합 test
+   * */
+  @SubscribeMessage('tempthrowDice')
+  async tempThrowDice(socket: Socket, data?) {
+    const roomNumIdx = await this.findUserRoom(socket['userId']);
+    const gameInfoIdx = await this.findGameInfoIdx({
+      roomNumber: roomNumIdx.roomNumber,
+      userId: socket['userId'],
+    });
+    console.log('diceIndex', data.diceResult);
+
+    if (
+      this.gameInfo[gameInfoIdx.gameInfoIdx].userDiceTurn[0] == socket['userId']
+    ) {
+      /*
+       * 유저의 턴
+       * */
+      if (
+        /*
+         * 주사위 처음 던질 때
+         * */
+        this.gameInfo[gameInfoIdx.gameInfoIdx].userDiceSet['diceCount'] === 3 &&
+        this.gameInfo[gameInfoIdx.gameInfoIdx].userDiceSet['throwDice'] === true
+      ) {
+        const diceResult = await this.service.userThrowDice();
+        this.gameInfo[gameInfoIdx.gameInfoIdx].userDiceSet['diceCount'] -= 1;
+        console.log('firstDice!!', diceResult);
+        this.server.sockets
+          .in(roomNumIdx.roomNumber.toString())
+          .emit('throwDice', {
+            state: 1,
+            message: `${socket['userId']} 이(가) 주사위를 던짐`,
+            diceResult: diceResult,
+            scoreBoard: await this.service.refreshScoreBoard(
+              socket,
+              this.roomInfo,
+              this.gameInfo,
+              {
+                diceResult: diceResult,
+                userId: socket['userId'],
+                gameInfoIdx: gameInfoIdx.gameInfoIdx,
+                roomNumber: roomNumIdx.roomNumber,
+              },
+            ),
+            diceCount:
+              this.gameInfo[gameInfoIdx.gameInfoIdx].userDiceSet['diceCount'],
+          });
+        this.gameInfo[gameInfoIdx.gameInfoIdx].userDiceSet['throwDice'] = false;
+      } else if (
+        this.gameInfo[gameInfoIdx.gameInfoIdx].userDiceSet['throwDice'] ==
+          false &&
+        this.gameInfo[gameInfoIdx.gameInfoIdx].userDiceSet['diceCount'] > 0
+      ) {
+        /*
+         * 두, 세번 째 주사위
+         * */
+        if (data.diceIndex.length <= 0) {
+          /*
+           * 선택된 주사위가 없을 때
+           * */
+          socket.emit('putDice', {
+            state: 0,
+            message: '주사위가 선택되지 않음',
+          });
+        } else if (data.diceResult !== undefined) {
+          /*
+           * 주사위 변경 횟수가 남아 있으며 선택된 주사위가 있을 때
+           * */
+          const diceResult = await this.service.userPutDice(
+            data.diceResult,
+            data.diceIndex,
+          );
+          this.gameInfo[gameInfoIdx.gameInfoIdx].userDiceSet['diceCount'] -= 1;
+          // console.log('result', diceResult);
+          this.server.sockets
+            .in(roomNumIdx.roomNumber.toString())
+            .emit('putDice', {
+              state: 1,
+              message: `${socket['userId']} 이(가) 선택한 주사위를 다시 던짐`,
+              diceResult: diceResult,
+              scoreBoard: await this.service.refreshScoreBoard(
+                socket,
+                this.roomInfo,
+                this.gameInfo,
+                {
+                  diceResult: diceResult,
+                  userId: socket['userId'],
+                  gameInfoIdx: gameInfoIdx.gameInfoIdx,
+                  roomNumber: roomNumIdx.roomNumber,
+                },
+              ),
+              diceIndex: data.diceIndex,
+              diceCount:
+                this.gameInfo[gameInfoIdx.gameInfoIdx].userDiceSet['diceCount'],
+            });
+        }
+      } else {
+        console.log('주사위 x');
+        socket.emit('putDice', {
+          state: 0,
+          message: '남은 주사위가 없음',
+        });
+      }
+    } else {
+      /*
+       * 유저 턴이 아닐 때
+       * */
+      socket.emit('throwDice', {
+        state: 0,
+        message: `${
+          await this.service.getDiceTurnName(
+            this.gameInfo[gameInfoIdx.gameInfoIdx].userDiceTurn[0],
+            this.gameInfo[gameInfoIdx.gameInfoIdx].userPlayInfo,
+          )
+          // this.gameInfo[gameInfoIdx.gameInfoIdx].userDiceTurn[0]
+        }의 턴`,
+      });
+    }
+  }
+
   /*
    * 사용자가 주사위를 던졌을 때
    * */
@@ -457,7 +579,7 @@ export class WsPlayAdapter implements OnGatewayConnection, OnGatewayDisconnect {
       userId: socket['userId'],
     });
 
-    console.log('putDiceData', data.diceIndex)
+    console.log('putDiceData', data.diceIndex);
 
     if (
       socket['userId'] ==
@@ -585,12 +707,14 @@ export class WsPlayAdapter implements OnGatewayConnection, OnGatewayDisconnect {
           socket['userId'],
         ); // (배열 끝에 아이디를 추가함)
         this.gameInfo[gameInfoIdx.gameInfoIdx].userDiceSet['throwDice'] = true; // 주사위를 던질 수 있는 조건을 바꿈
-        this.gameInfo[gameInfoIdx.gameInfoIdx].userDiceSet['diceCount'] = 2; // 주사위를 바꿀 수 있는 횟수를 변경
+        this.gameInfo[gameInfoIdx.gameInfoIdx].userDiceSet['diceCount'] = 3; // 주사위를 바꿀 수 있는 횟수를 변경
         this.server.sockets
           .in(roomNumIdx.roomNumber.toString())
           .emit('userScoreBoard', {
             scoreBoard: scoreBoard,
             picked: await this.service.getUserPick(scoreBoard),
+            diceCount:
+              this.gameInfo[gameInfoIdx.gameInfoIdx].userDiceSet['diceCount'],
           }); // 다음 턴 유저 점수판 전송
         this.gameInfo[gameInfoIdx.gameInfoIdx].userPlayInfo[
           gameInfoIdx.userPlayInfoIdx
