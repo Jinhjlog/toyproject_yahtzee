@@ -518,7 +518,11 @@ export class WsPlayAdapter implements OnGatewayConnection, OnGatewayDisconnect {
         socket.emit('putDice', {
           state: 0,
           message: `${
-            this.gameInfo[gameInfoIdx.gameInfoIdx].userDiceTurn[0]
+            await this.service.getDiceTurnName(
+              this.gameInfo[gameInfoIdx.gameInfoIdx].userDiceTurn[0],
+              this.gameInfo[gameInfoIdx.gameInfoIdx].userPlayInfo,
+            )
+            // this.gameInfo[gameInfoIdx.gameInfoIdx].userDiceTurn[0]
           }의 턴`,
         });
       }

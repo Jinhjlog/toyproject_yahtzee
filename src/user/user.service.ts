@@ -2,7 +2,6 @@ import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../prisma/prisma.service';
 import { JwtService } from '@nestjs/jwt';
-import { use } from 'passport';
 @Injectable()
 export class UserService {
   constructor(private db: PrismaService) {}
@@ -12,7 +11,11 @@ export class UserService {
 
   // 회원가입
   async signUp(data) {
-    if (data.user_email.length <= 0 || data.user_pw.length <= 0) {
+    if (
+      data.user_email.length <= 0 ||
+      data.user_pw.length <= 0 ||
+      data.user_name <= 0
+    ) {
       return '잘못된 입력';
     }
 

@@ -1,8 +1,5 @@
-import { GameSetWsEntity } from './entities/game-set-ws.entity';
-import { GamePlayWsEntity } from './entities/game-play-ws.entity';
 import { PrismaService } from '../prisma/prisma.service';
 import { Inject } from '@nestjs/common';
-import { Socket } from 'socket.io';
 
 export class WsPlayService {
   @Inject()
